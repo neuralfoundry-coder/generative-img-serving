@@ -118,6 +118,7 @@ pub struct BackendListResponse {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AddBackendRequest {
     pub name: String,
+    #[serde(default = "default_protocol")]
     pub protocol: String,
     pub endpoints: Vec<String>,
     #[serde(default = "default_health_check_path")]
@@ -128,6 +129,17 @@ pub struct AddBackendRequest {
     pub timeout_ms: u64,
     #[serde(default = "default_weight")]
     pub weight: u32,
+    /// Backend type: "image" or "text"
+    #[serde(default = "default_backend_type")]
+    pub backend_type: String,
+}
+
+fn default_protocol() -> String {
+    "http".to_string()
+}
+
+fn default_backend_type() -> String {
+    "image".to_string()
 }
 
 fn default_health_check_path() -> String {

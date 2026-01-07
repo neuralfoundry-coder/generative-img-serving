@@ -1,0 +1,173 @@
+# Gen Serving Gateway - Gateway Configuration
+
+version: "1.0"
+
+# Server settings
+server:
+  host: "0.0.0.0"
+  port: 8080
+  # TLS configuration (optional)
+  # tls:
+  #   enabled: false
+  #   cert_path: /path/to/cert.pem
+  #   key_path: /path/to/key.pem
+
+# API Configuration
+api:
+  # Base path for all API endpoints
+  base_path: "/v1"
+  
+  # Enable/disable specific API groups
+  endpoints:
+    # Image generation endpoints
+    image:
+      enabled: true
+      path: "/images"
+    
+    # Text/chat completion endpoints  
+    text:
+      enabled: true
+      chat_completions: "/chat/completions"
+      completions: "/completions"
+    
+    # Model listing endpoint
+    models:
+      enabled: true
+      path: "/models"
+    
+    # Health check endpoint
+    health:
+      enabled: true
+      path: "/health"
+    
+    # Admin endpoints (backend management)
+    admin:
+      enabled: true
+      path: "/admin"
+
+# Authentication configuration
+auth:
+  enabled: true
+  
+  # Authentication methods (in order of priority)
+  methods:
+    - type: bearer
+      header: "Authorization"
+      prefix: "Bearer "
+    
+    - type: api_key
+      header: "X-API-Key"
+    
+    - type: query
+      param: "api_key"
+  
+  # API keys (for static key authentication)
+  # Use environment variable GEN_GATEWAY_API_KEYS for production
+  api_keys:
+    - "dev-api-key-12345"
+    # Add more keys as needed
+  
+  # Bypass authentication for specific paths
+  bypass_paths:
+    - "/health"
+    - "/v1/health"
+
+# Rate limiting configuration
+rate_limit:
+  enabled: true
+  
+  # Global rate limit
+  global:
+    requests_per_second: 100
+    burst_size: 200
+  
+  # Per-client rate limit (identified by API key or IP)
+  per_client:
+    requests_per_second: 10
+    burst_size: 20
+  
+  # Per-model rate limits (optional)
+  # per_model:
+  #   gpt-4:
+  #     requests_per_minute: 60
+  #   dall-e-3:
+  #     requests_per_minute: 5
+
+# Queue and batching configuration
+queue:
+  enabled: true
+  
+  # Maximum queue size
+  max_size: 1000
+  
+  # Request timeout (how long to wait in queue)
+  timeout_secs: 300
+  
+  # Dynamic batching settings
+  batching:
+    enabled: true
+    max_batch_size: 8
+    max_wait_ms: 100
+
+# Storage configuration (for generated images)
+storage:
+  # Local storage path
+  base_path: "./generated"
+  
+  # URL prefix for serving stored files
+  url_prefix: "http://localhost:8080/files"
+  
+  # Cleanup settings
+  cleanup:
+    enabled: true
+    max_age_hours: 24
+    run_interval_mins: 60
+
+# Logging configuration
+logging:
+  # Log level: trace, debug, info, warn, error
+  level: "info"
+  
+  # Log format: json, pretty
+  format: "json"
+  
+  # Log destinations
+  output:
+    - type: stdout
+    # - type: file
+    #   path: /var/log/gen-gateway/gateway.log
+    #   rotation:
+    #     max_size_mb: 100
+    #     max_files: 5
+
+# Metrics and monitoring
+metrics:
+  enabled: true
+  
+  # Prometheus metrics endpoint
+  prometheus:
+    enabled: true
+    path: "/metrics"
+  
+  # Health check configuration
+  health_check:
+    detailed: true
+    include_backends: true
+
+# CORS configuration
+cors:
+  enabled: true
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+  allowed_headers:
+    - "Content-Type"
+    - "Authorization"
+    - "X-API-Key"
+  max_age_secs: 3600
+

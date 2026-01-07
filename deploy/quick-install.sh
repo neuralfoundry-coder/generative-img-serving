@@ -351,13 +351,23 @@ setup_docker_permissions() {
 show_banner() {
     echo ""
     echo -e "${CYAN}╔════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║   Generative Image Serving - Quick Install             ║${NC}"
+    echo -e "${CYAN}║   Gen Serving Gateway - Quick Install                  ║${NC}"
+    echo -e "${CYAN}║   (Image + Text AI Model Serving)                      ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
 
 download_scripts() {
     log_step "Downloading deployment scripts..."
+    
+    # Download setup-backends script for backend configuration
+    curl -fsSL "https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/scripts/setup-backends.sh" -o setup-backends.sh
+    chmod +x setup-backends.sh
+    
+    # Download sample config files
+    mkdir -p config
+    curl -fsSL "https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/config/backends.yaml" -o config/backends.yaml 2>/dev/null || true
+    curl -fsSL "https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/config/gateway.yaml" -o config/gateway.yaml 2>/dev/null || true
     
     case "$METHOD" in
         docker|1)
@@ -372,6 +382,26 @@ download_scripts() {
     esac
     
     log_info "Scripts downloaded"
+}
+
+setup_backends_interactive() {
+    log_step "Backend Configuration"
+    echo ""
+    echo "Do you want to configure AI model backends now?"
+    echo "  [1] Yes, run interactive setup"
+    echo "  [2] No, use default configuration"
+    echo ""
+    read -p "Enter choice [1-2]: " setup_choice
+    
+    case "$setup_choice" in
+        1)
+            ./setup-backends.sh
+            ;;
+        *)
+            log_info "Skipping backend setup. You can run it later with:"
+            echo "  cd $INSTALL_DIR && ./setup-backends.sh"
+            ;;
+    esac
 }
 
 deploy_service() {
@@ -434,8 +464,15 @@ main() {
     mkdir -p "$INSTALL_DIR"
     cd "$INSTALL_DIR"
     
-    # Download and deploy
+    # Download scripts and config
     download_scripts
+    
+    # Optional: Interactive backend setup
+    if [[ -t 0 ]]; then  # Only if running interactively
+        setup_backends_interactive
+    fi
+    
+    # Deploy service
     deploy_service
     
     echo ""
@@ -446,13 +483,26 @@ main() {
     echo "Install directory: $INSTALL_DIR"
     echo "API Endpoint: http://localhost:${HOST_PORT:-8080}"
     echo ""
+    echo "Configuration:"
+    echo "  Backend config: $INSTALL_DIR/config/backends.yaml"
+    echo "  Gateway config: $INSTALL_DIR/config/gateway.yaml"
+    echo "  Setup tool:     $INSTALL_DIR/setup-backends.sh"
+    echo ""
+    echo "API Endpoints (OpenAI compatible):"
+    echo "  POST /v1/images/generations    - Image generation"
+    echo "  POST /v1/chat/completions      - Chat completion"
+    echo "  POST /v1/completions           - Text completion"
+    echo "  GET  /v1/models                - List models"
+    echo ""
     echo "Commands:"
     if [[ "$METHOD" == "docker" ]] || [[ "$METHOD" == "1" ]]; then
         echo "  cd $INSTALL_DIR && ./deploy-docker.sh logs"
         echo "  cd $INSTALL_DIR && ./deploy-docker.sh status"
+        echo "  cd $INSTALL_DIR && ./setup-backends.sh"
     else
         echo "  cd $INSTALL_DIR && ./deploy-compose.sh logs"
         echo "  cd $INSTALL_DIR && ./deploy-compose.sh status"
+        echo "  cd $INSTALL_DIR && ./setup-backends.sh"
     fi
     echo ""
 }

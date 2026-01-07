@@ -5,7 +5,9 @@ use crate::api::models::{
     GenerateImageRequest, GenerateImageResponse, HealthResponse, ImageData, SuccessResponse,
 };
 use crate::backend::traits::GenerateRequest as BackendGenerateRequest;
-use crate::config::BackendConfig;
+use crate::config::{
+    BackendConfig, BackendType, ProtocolType, BackendAuth, BackendHealthCheck, BackendLoadBalancer,
+};
 use crate::error::AppError;
 use crate::AppState;
 use axum::{
@@ -99,15 +101,46 @@ pub async fn add_backend(
 ) -> Result<Json<SuccessResponse>, AppError> {
     info!(name = %request.name, protocol = %request.protocol, "Adding new backend");
 
+    // Parse protocol
+    let protocol = match request.protocol.to_lowercase().as_str() {
+        "http" => ProtocolType::Http,
+        "grpc" => ProtocolType::Grpc,
+        "openai" => ProtocolType::OpenAI,
+        "anthropic" => ProtocolType::Anthropic,
+        "tgi" => ProtocolType::Tgi,
+        _ => ProtocolType::Http,
+    };
+    
+    // Parse backend type
+    let backend_type = match request.backend_type.to_lowercase().as_str() {
+        "text" => BackendType::Text,
+        "image" => BackendType::Image,
+        "multi" => BackendType::Multi,
+        _ => BackendType::Image,
+    };
+
     let backend_config = BackendConfig {
         name: request.name.clone(),
-        protocol: request.protocol,
+        backend_type,
+        protocol,
         endpoints: request.endpoints,
+        enabled: true,
+        auth: BackendAuth::default(),
+        health_check: BackendHealthCheck {
+            path: request.health_check_path.clone(),
+            interval_secs: request.health_check_interval_secs,
+            ..Default::default()
+        },
+        load_balancer: BackendLoadBalancer {
+            weight: request.weight,
+            ..Default::default()
+        },
+        models: vec![],
+        capabilities: vec![],
         health_check_path: request.health_check_path,
         health_check_interval_secs: request.health_check_interval_secs,
         timeout_ms: request.timeout_ms,
         weight: request.weight,
-        enabled: true,
     };
 
     state.backend_registry.add_backend(backend_config).await?;

@@ -1,102 +1,255 @@
-# Generative Image Serving Framework
+# Gen Serving Gateway
 
-**English** | [한국어](README-KO.md)
+A unified AI model serving gateway for both **Image** and **Text** generation backends. Built with Rust for high performance and reliability.
 
-A Rust-based unified serving framework for generative image models. Integrate and manage multiple image generation backends through a single gateway.
+[한국어 문서 (Korean)](README-KO.md)
 
 ## Features
 
-- **Multi-Backend Integration**: HTTP/gRPC protocol support, connect various image generation model backends
-- **Gateway Functions**: Load balancing, dynamic routing, API authentication, rate limiting
-- **Async Processing**: Async request queue, dynamic batch processing
-- **Fault Tolerance**: Health checks, automatic failover, circuit breaker pattern
-- **Flexible Response Formats**: Base64 encoding, file storage, URL references
-- **OpenAI API Compatible**: Compatibility with existing clients
+### Core Capabilities
+- **Unified API**: OpenAI-compatible API for both image and text generation
+- **Multi-Backend Support**: Connect multiple AI backends (local or cloud)
+- **Load Balancing**: Round Robin, Weighted, Least Connections strategies
+- **Health Checking**: Automatic backend health monitoring with failover
+- **Rate Limiting**: Configurable per-client and global rate limits
+- **Authentication**: API key-based authentication
 
-## Architecture
+### Supported Backends
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Clients                               │
-│              (HTTP Client, SDK, etc.)                        │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                    Gateway Layer                             │
-│  ┌──────────┐  ┌────────────┐  ┌──────────┐  ┌───────────┐ │
-│  │ Axum HTTP│  │ API Key    │  │ Rate     │  │ Dynamic   │ │
-│  │ Server   │→ │ Auth       │→ │ Limiter  │→ │ Router    │ │
-│  └──────────┘  └────────────┘  └──────────┘  └───────────┘ │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                     Core Layer                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │ Request Queue│→ │ Batcher      │→ │ Load Balancer     │  │
-│  └──────────────┘  └──────────────┘  └─────────┬─────────┘  │
-│                                                 │            │
-│  ┌──────────────────────────────────────────────▼─────────┐ │
-│  │              Health Check Manager                       │ │
-│  └────────────────────────────────────────────────────────┘ │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                   Backend Pool                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
-│  │ SD Backend   │  │ DALL-E       │  │ Custom Model     │   │
-│  │ (HTTP)       │  │ (HTTP)       │  │ (gRPC)           │   │
-│  └──────────────┘  └──────────────┘  └──────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+#### Image Generation
+- Stable Diffusion (Automatic1111 WebUI, ComfyUI)
+- DALL-E (OpenAI API)
+- Midjourney API
+- Custom HTTP/gRPC backends
+
+#### Text Generation
+- **OpenAI API** (GPT-4, GPT-3.5)
+- **Anthropic** (Claude 3)
+- **Ollama** (Local LLMs)
+- **vLLM** (High-performance serving)
+- **TGI** (Text Generation Inference)
+- **Together AI**, **Groq**, and other OpenAI-compatible APIs
 
 ## Quick Start
 
-### One-Line Installation (Recommended)
-
-Deploy instantly with a single command:
+### One-Line Installation (Ubuntu/Debian/macOS)
 
 ```bash
-# Docker Compose (Recommended)
+# Using Docker Compose (recommended)
 curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/deploy/quick-install.sh | bash -s compose
 
-# Docker Direct
+# Using Docker directly
 curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/deploy/quick-install.sh | bash -s docker
 ```
 
-**Supported Operating Systems:**
-
-| OS | Package Manager | Status |
-|----|-----------------|--------|
-| Ubuntu / Debian | apt | ✅ |
-| CentOS / RHEL / Rocky / AlmaLinux | yum | ✅ |
-| Fedora | dnf | ✅ |
-| Amazon Linux | yum | ✅ |
-| macOS | Homebrew | ✅ |
-
-**Installation Options:**
+### Manual Installation
 
 ```bash
-# Custom port
-curl -fsSL .../quick-install.sh | HOST_PORT=9090 bash -s compose
+# Pull the Docker image
+docker pull neuralfoundry2coder/gen-serving-gateway:latest
 
-# Custom install directory
-curl -fsSL .../quick-install.sh | INSTALL_DIR=/opt/gen-gateway bash -s compose
-
-# Specific version
-curl -fsSL .../quick-install.sh | IMAGE_TAG=0.2.0 bash -s compose
+# Run with default configuration
+docker run -d \
+  --name gen-gateway \
+  -p 8080:8080 \
+  -v $(pwd)/config:/app/config:ro \
+  neuralfoundry2coder/gen-serving-gateway:latest
 ```
 
-### Build from Source
+## Configuration
 
-#### Requirements
+### Backend Setup (Interactive)
 
-- Rust 1.83+
-- (Optional) protoc for gRPC features
-
-#### Installation
+Run the interactive setup script to configure your AI backends:
 
 ```bash
-# Clone repository
+./scripts/setup-backends.sh
+```
+
+This will guide you through:
+1. Adding image generation backends (SD, DALL-E, etc.)
+2. Adding text generation backends (OpenAI, Ollama, etc.)
+3. Configuring authentication and health checks
+4. Testing backend connections
+
+### Configuration Files
+
+#### `config/backends.yaml` - AI Backend Configuration
+
+```yaml
+version: "1.0"
+
+backends:
+  # Image Generation Backends
+  image:
+    - name: stable-diffusion
+      type: image
+      protocol: http
+      endpoints:
+        - "http://localhost:7860"
+      health_check:
+        path: /internal/ping
+        interval_secs: 30
+
+  # Text Generation Backends  
+  text:
+    - name: ollama
+      type: text
+      protocol: openai
+      endpoints:
+        - "http://localhost:11434/v1"
+      models:
+        - llama3
+        - mistral
+      capabilities:
+        - chat
+        - completion
+
+    - name: openai
+      type: text
+      protocol: openai
+      endpoints:
+        - "https://api.openai.com/v1"
+      auth:
+        type: bearer
+        token_env: OPENAI_API_KEY
+      models:
+        - gpt-4
+        - gpt-3.5-turbo
+```
+
+#### `config/gateway.yaml` - Gateway Configuration
+
+```yaml
+version: "1.0"
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+auth:
+  enabled: true
+  api_keys:
+    - "your-api-key-here"
+  bypass_paths:
+    - "/health"
+
+rate_limit:
+  enabled: true
+  global:
+    requests_per_second: 100
+    burst_size: 200
+  per_client:
+    requests_per_second: 10
+```
+
+## API Reference
+
+All endpoints are OpenAI-compatible.
+
+### Image Generation
+
+```bash
+# Generate an image
+curl -X POST http://localhost:8080/v1/images/generations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "prompt": "A beautiful sunset over mountains",
+    "n": 1,
+    "size": "1024x1024",
+    "response_format": "url"
+  }'
+```
+
+### Chat Completion
+
+```bash
+# Chat with an LLM
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "model": "llama3",
+    "messages": [
+      {"role": "user", "content": "Hello, how are you?"}
+    ]
+  }'
+```
+
+### Text Completion
+
+```bash
+curl -X POST http://localhost:8080/v1/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "model": "llama3",
+    "prompt": "The quick brown fox",
+    "max_tokens": 50
+  }'
+```
+
+### List Models
+
+```bash
+curl http://localhost:8080/v1/models \
+  -H "Authorization: Bearer your-api-key"
+```
+
+### Health Check
+
+```bash
+curl http://localhost:8080/health
+```
+
+### Backend Management
+
+```bash
+# List all backends
+curl http://localhost:8080/v1/backends \
+  -H "Authorization: Bearer your-api-key"
+
+# List text backends
+curl http://localhost:8080/v1/backends/text \
+  -H "Authorization: Bearer your-api-key"
+
+# Add a new backend
+curl -X POST http://localhost:8080/v1/backends \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "name": "new-backend",
+    "protocol": "http",
+    "backend_type": "text",
+    "endpoints": ["http://localhost:8000/v1"]
+  }'
+
+# Remove a backend
+curl -X DELETE http://localhost:8080/v1/backends/backend-name \
+  -H "Authorization: Bearer your-api-key"
+```
+
+## Docker Hub
+
+The official Docker image is available on Docker Hub:
+
+```bash
+docker pull neuralfoundry2coder/gen-serving-gateway:latest
+```
+
+### Available Tags
+
+- `latest` - Latest stable release
+- `x.y.z` - Specific version (e.g., `0.3.0`)
+- `sha-xxxxxx` - Specific commit
+
+## Development
+
+### Building from Source
+
+```bash
+# Clone the repository
 git clone https://github.com/neuralfoundry-coder/gen-serving-gateway.git
 cd gen-serving-gateway
 
@@ -107,322 +260,90 @@ cargo build --release
 ./target/release/gen-gateway
 ```
 
-### Configuration
-
-Edit `config/default.toml`:
-
-```toml
-[server]
-host = "0.0.0.0"
-port = 8080
-
-[auth]
-enabled = true
-api_keys = ["your-api-key"]
-
-[rate_limit]
-enabled = true
-requests_per_second = 100
-burst_size = 200
-
-[[backends]]
-name = "stable-diffusion"
-protocol = "http"
-endpoints = ["http://localhost:7860"]
-health_check_path = "/health"
-health_check_interval_secs = 30
-timeout_ms = 60000
-weight = 1
-enabled = true
-```
-
-Environment variables (prefix: `IMG_SERVING__`):
+### Running Tests
 
 ```bash
-export IMG_SERVING__SERVER__PORT=9090
-export IMG_SERVING__AUTH__ENABLED=false
-```
-
-## API Endpoints
-
-### Image Generation (OpenAI Compatible)
-
-```bash
-curl -X POST http://localhost:8080/v1/images/generations \
-  -H "Authorization: Bearer your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "A beautiful sunset over mountains",
-    "n": 1,
-    "size": "1024x1024",
-    "response_format": "url"
-  }'
-```
-
-**Response:**
-```json
-{
-  "created": 1234567890,
-  "data": [
-    {
-      "url": "http://localhost:8080/images/abc123.png"
-    }
-  ]
-}
-```
-
-### Extended Parameters
-
-Additional parameters beyond OpenAI API:
-
-```json
-{
-  "prompt": "...",
-  "negative_prompt": "blurry, low quality",
-  "seed": 42,
-  "guidance_scale": 7.5,
-  "num_inference_steps": 50,
-  "backend": "stable-diffusion"
-}
-```
-
-### Backend Management
-
-```bash
-# List backends
-curl http://localhost:8080/v1/backends \
-  -H "Authorization: Bearer your-api-key"
-
-# Add backend
-curl -X POST http://localhost:8080/v1/backends \
-  -H "Authorization: Bearer your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "new-backend",
-    "protocol": "http",
-    "endpoints": ["http://gpu-server:7860"]
-  }'
-
-# Remove backend
-curl -X DELETE http://localhost:8080/v1/backends/backend-name \
-  -H "Authorization: Bearer your-api-key"
-```
-
-### Health Check
-
-```bash
-curl http://localhost:8080/health
-```
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "version": "0.2.0",
-  "backends": {
-    "total": 2,
-    "healthy": 2,
-    "unhealthy": 0
-  }
-}
-```
-
-## Load Balancing Strategies
-
-- **Round Robin** (default): Distribute requests sequentially
-- **Weighted Round Robin**: Weight-based distribution
-- **Random**: Random selection
-- **Least Connections**: Connection count based (coming soon)
-
-## Response Formats
-
-| Format | Description |
-|--------|-------------|
-| `url` | Return URL of generated image (default) |
-| `b64_json` | Return Base64 encoded image data |
-| `file` | Return local file path (internal use) |
-
-## Docker Deployment
-
-### Docker Hub Image
-
-```bash
-# Latest version
-docker pull neuralfoundry2coder/gen-serving-gateway:latest
-
-# Specific version
-docker pull neuralfoundry2coder/gen-serving-gateway:0.2.0
-```
-
-### Manual Docker Run
-
-```bash
-docker run -d \
-  --name gen-gateway \
-  -p 8080:8080 \
-  -v $(pwd)/config:/app/config \
-  -v $(pwd)/generated_images:/app/generated_images \
-  -e RUST_LOG=info \
-  --restart unless-stopped \
-  neuralfoundry2coder/gen-serving-gateway:latest
-```
-
-### Docker Compose
-
-```yaml
-# docker-compose.yml
-services:
-  gen-gateway:
-    image: neuralfoundry2coder/gen-serving-gateway:latest
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./config:/app/config:ro
-      - ./generated_images:/app/generated_images
-    environment:
-      - RUST_LOG=info
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
-
-```bash
-docker compose up -d
-```
-
-## Development
-
-```bash
-# Development mode
-cargo run
-
-# Run tests
+# Unit tests
 cargo test
 
-# Format code
-cargo fmt
-
-# Lint check
-cargo clippy
+# With mock backends (requires Docker)
+./docker/scripts/start-test-env.sh
+cargo test --features integration
+./docker/scripts/stop-test-env.sh
 ```
 
-## gRPC Support
+### Release & Deployment
 
-Install `protoc` for gRPC backends:
+For maintainers:
 
 ```bash
-# macOS
-brew install protobuf
-
-# Ubuntu
-apt-get install protobuf-compiler
-
-# Build with gRPC codegen
-cargo build --features grpc-codegen
-```
-
-## Project Structure
-
-```
-src/
-├── main.rs                 # Entry point
-├── lib.rs                  # Library root
-├── config/                 # Configuration
-├── api/                    # HTTP API
-│   ├── routes.rs          # Route definitions
-│   ├── handlers.rs        # Request handlers
-│   └── models.rs          # API models
-├── middleware/            # Middleware
-│   ├── auth.rs            # API Key authentication
-│   └── rate_limit.rs      # Rate limiting
-├── gateway/               # Gateway
-│   ├── load_balancer.rs   # Load balancer
-│   ├── health_check.rs    # Health checks
-│   └── router.rs          # Dynamic router
-├── queue/                 # Request processing
-│   ├── request_queue.rs   # Async queue
-│   └── batcher.rs         # Batch processing
-├── backend/               # Backend integration
-│   ├── traits.rs          # Common traits
-│   ├── http_backend.rs    # HTTP client
-│   ├── grpc_backend.rs    # gRPC client
-│   └── registry.rs        # Backend registry
-├── response/              # Response handling
-│   ├── base64.rs          # Base64 encoding
-│   ├── file.rs            # File storage
-│   └── url.rs             # URL generation
-└── error.rs               # Error handling
-
-deploy/
-├── quick-install.sh       # One-line installer (multi-OS)
-├── deploy-docker.sh       # Docker direct deployment
-├── deploy-compose.sh      # Docker Compose deployment
-└── docker-compose.yml     # Compose configuration
-
-scripts/
-├── deploy.sh              # Release & deployment script
-├── test-runner.sh         # Test runner
-└── ci-test.sh             # CI/CD test script
-```
-
----
-
-## Release & Deployment (For Developers)
-
-### Deployment Script (`scripts/deploy.sh`)
-
-Unified deployment script for Docker Hub publishing.
-
-#### 1. Direct Push Mode
-
-```bash
-# Setup .env file (first time only)
-cp .env.example .env
-
-# Build and push
-./scripts/deploy.sh direct
-
-# Push specific version
-./scripts/deploy.sh direct -v 1.0.0
-```
-
-#### 2. Release Mode (via GitHub Actions)
-
-```bash
-# Interactive version selection + auto commit/push/tag
+# Interactive release (prompts for version bump)
 ./scripts/deploy.sh release
 
-# Version selection prompt:
-#   [1] Major  : v0.2.0 → v1.0.0  (Breaking changes)
-#   [2] Minor  : v0.2.0 → v0.3.0  (New features)
-#   [3] Patch  : v0.2.0 → v0.2.1  (Bug fixes)
-#   [4] Custom : Enter custom version
+# Direct Docker Hub push
+./scripts/deploy.sh direct
 
-# Release specific version (skip prompt)
+# Release with specific version
 ./scripts/deploy.sh release -v 1.0.0
-
-# Dry run
-./scripts/deploy.sh release -d
 ```
 
-### GitHub Actions Setup
+## Architecture
 
-Configure repository secrets for automated deployment:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Gen Serving Gateway                       │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐│
+│  │   Auth      │ │ Rate Limit  │ │       Router            ││
+│  │  Middleware │ │  Middleware │ │  /v1/images/generations ││
+│  └─────────────┘ └─────────────┘ │  /v1/chat/completions   ││
+│                                   │  /v1/completions        ││
+│                                   │  /v1/models             ││
+│                                   └─────────────────────────┘│
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────┐  ┌─────────────────────────────────┤
+│  │   Load Balancer     │  │      Request Queue              │
+│  │  (RR, Weighted, LC) │  │      (Async, Batching)          │
+│  └─────────────────────┘  └─────────────────────────────────┤
+├─────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              Backend Registry                          │  │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐     │  │
+│  │  │ Image   │ │  Text   │ │  gRPC   │ │ Health  │     │  │
+│  │  │ Backend │ │ Backend │ │ Backend │ │ Checker │     │  │
+│  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘     │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+        ┌──────────┐   ┌──────────┐   ┌──────────┐
+        │ Stable   │   │  Ollama  │   │  OpenAI  │
+        │ Diffusion│   │  (Local) │   │   API    │
+        └──────────┘   └──────────┘   └──────────┘
+```
 
-1. Go to GitHub repository Settings → Secrets and variables → Actions
-2. Add the following secrets:
-   - `DOCKER_USERNAME`: Docker Hub username
-   - `DOCKER_ACCESS_TOKEN`: Docker Hub access token
+## Environment Variables
 
-**Auto Triggers:**
-- `main` branch push → Auto build and push
-- Tag creation (`v*`) → Push with version tag
-- Pull Request → Build test only (no push)
-- Manual → workflow_dispatch in Actions tab
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GEN_GATEWAY__SERVER__HOST` | Server bind address | `0.0.0.0` |
+| `GEN_GATEWAY__SERVER__PORT` | Server port | `8080` |
+| `GEN_GATEWAY__AUTH__ENABLED` | Enable authentication | `true` |
+| `RUST_LOG` | Log level | `info` |
+| `OPENAI_API_KEY` | OpenAI API key (for OpenAI backend) | - |
+| `ANTHROPIC_API_KEY` | Anthropic API key (for Claude backend) | - |
 
 ## License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request

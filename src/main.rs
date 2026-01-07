@@ -1,9 +1,10 @@
-//! Main entry point for the Generative Image Serving Framework
+//! Main entry point for the Gen Serving Gateway
 
-use generative_img_serving::{
+use gen_serving_gateway::{
     api,
     backend::registry::BackendRegistry,
-    config::Settings,
+    backend::TextBackendRegistry,
+    config::{Settings, BackendType},
     gateway::{health_check::HealthCheckManager, load_balancer::LoadBalancer},
     queue::request_queue::RequestQueue,
     AppState,
@@ -24,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
         .with(fmt::layer().json())
         .init();
 
-    info!("Starting Generative Image Serving Framework");
+    info!("Starting Gen Serving Gateway");
 
     // Load configuration
     let settings = Settings::load()?;
@@ -35,13 +36,35 @@ async fn main() -> anyhow::Result<()> {
 
     let settings = Arc::new(RwLock::new(settings));
     
-    // Initialize backend registry
+    // Initialize backend registries
     let backend_registry = Arc::new(BackendRegistry::new());
+    let text_registry = Arc::new(TextBackendRegistry::new());
     
     // Register backends from configuration
     {
         let config = settings.read().await;
-        backend_registry.initialize_from_config(&config.backends).await?;
+        
+        // Register image backends
+        let image_backends: Vec<_> = config.backends.iter()
+            .filter(|b| b.backend_type == BackendType::Image)
+            .cloned()
+            .collect();
+        backend_registry.initialize_from_config(&image_backends).await?;
+        info!("Registered {} image backends", image_backends.len());
+        
+        // Register text backends
+        for backend_config in config.backends.iter()
+            .filter(|b| b.backend_type == BackendType::Text)
+        {
+            if let Err(e) = text_registry.add_backend(backend_config.clone()).await {
+                tracing::warn!(
+                    backend = %backend_config.name,
+                    error = %e,
+                    "Failed to register text backend"
+                );
+            }
+        }
+        info!("Registered {} text backends", text_registry.list_backends().await.len());
     }
     
     // Initialize load balancer
@@ -67,6 +90,7 @@ async fn main() -> anyhow::Result<()> {
     let app_state = Arc::new(AppState {
         settings: settings.clone(),
         backend_registry,
+        text_registry,
         load_balancer,
         health_manager,
         request_queue,
@@ -89,4 +113,3 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-

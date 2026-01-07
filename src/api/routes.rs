@@ -1,6 +1,7 @@
 //! HTTP route definitions
 
 use crate::api::handlers;
+use crate::api::text_handlers;
 use crate::middleware::{auth::AuthLayer, rate_limit::RateLimitLayer};
 use axum::{
     routing::{delete, get, post},
@@ -27,10 +28,16 @@ pub async fn create_router(state: Arc<crate::AppState>) -> Router {
     let api_routes = Router::new()
         // Image generation endpoint (OpenAI compatible)
         .route("/images/generations", post(handlers::generate_image))
+        // Text/Chat completion endpoints (OpenAI compatible)
+        .route("/chat/completions", post(text_handlers::chat_completion))
+        .route("/completions", post(text_handlers::text_completion))
+        // Models endpoint
+        .route("/models", get(text_handlers::list_models))
         // Backend management endpoints
         .route("/backends", get(handlers::list_backends))
         .route("/backends", post(handlers::add_backend))
-        .route("/backends/:name", delete(handlers::remove_backend));
+        .route("/backends/:name", delete(handlers::remove_backend))
+        .route("/backends/text", get(text_handlers::list_text_backends));
 
     // Apply middleware conditionally
     let api_routes = if rate_limit_enabled {
@@ -53,6 +60,8 @@ pub async fn create_router(state: Arc<crate::AppState>) -> Router {
         .route("/metrics", get(handlers::metrics))
         // Static file serving for generated images
         .nest_service("/images", tower_http::services::ServeDir::new("generated_images"))
+        // Static file serving for generated content
+        .nest_service("/files", tower_http::services::ServeDir::new("generated"))
         // API routes under /v1 prefix
         .nest("/v1", api_routes)
         // Add shared state

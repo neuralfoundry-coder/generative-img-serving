@@ -31,7 +31,8 @@ log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
 show_banner() {
     echo ""
     echo -e "${BLUE}============================================${NC}"
-    echo -e "${BLUE}  Generative Image Serving - Docker Deploy${NC}"
+    echo -e "${BLUE}  Gen Serving Gateway - Docker Deploy${NC}"
+    echo -e "${BLUE}  (Image + Text AI Model Serving)${NC}"
     echo -e "${BLUE}============================================${NC}"
     echo ""
 }
@@ -174,6 +175,12 @@ show_status() {
     curl -s "http://localhost:${HOST_PORT}/health" 2>/dev/null | head -c 200 || echo "  (waiting...)"
     echo ""
     echo ""
+    echo "API Endpoints (OpenAI compatible):"
+    echo "  POST /v1/images/generations    - Image generation"
+    echo "  POST /v1/chat/completions      - Chat completion"
+    echo "  POST /v1/completions           - Text completion"
+    echo "  GET  /v1/models                - List models"
+    echo ""
     echo "Commands:"
     echo "  View logs:    docker logs -f $CONTAINER_NAME"
     echo "  Stop:         docker stop $CONTAINER_NAME"
@@ -181,7 +188,7 @@ show_status() {
     echo "  Restart:      docker restart $CONTAINER_NAME"
     echo "  Remove:       docker rm -f $CONTAINER_NAME"
     echo ""
-    echo "API Endpoint: http://localhost:${HOST_PORT}"
+    echo "Base URL: http://localhost:${HOST_PORT}"
     echo ""
 }
 

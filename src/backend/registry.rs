@@ -7,7 +7,7 @@ use tracing::{info, warn};
 use crate::backend::grpc_backend::GrpcBackend;
 use crate::backend::http_backend::HttpBackend;
 use crate::backend::traits::{BackendStatus, ImageBackend};
-use crate::config::BackendConfig;
+use crate::config::{BackendConfig, ProtocolType};
 use crate::error::{AppError, Result};
 
 /// Registry for managing image generation backends
@@ -47,17 +47,17 @@ impl BackendRegistry {
 
     /// Create a backend from configuration
     async fn create_backend(&self, config: &BackendConfig) -> Result<Arc<dyn ImageBackend>> {
-        match config.protocol.as_str() {
-            "http" => {
+        match config.protocol {
+            ProtocolType::Http | ProtocolType::OpenAI => {
                 let backend = HttpBackend::new(config)?;
                 Ok(Arc::new(backend))
             }
-            "grpc" => {
+            ProtocolType::Grpc => {
                 let backend = GrpcBackend::new(config).await?;
                 Ok(Arc::new(backend))
             }
             _ => Err(AppError::Config(config::ConfigError::Message(format!(
-                "Unknown protocol: {}",
+                "Unsupported protocol for image backend: {}",
                 config.protocol
             )))),
         }

@@ -1,0 +1,195 @@
+# Gen Serving Gateway - Backend Configuration
+# This file defines AI model backends for image and text generation
+
+version: "1.0"
+
+# Global settings
+defaults:
+  health_check:
+    interval_secs: 30
+    timeout_secs: 5
+  connection:
+    timeout_ms: 60000
+    retry_count: 3
+
+# Backend definitions
+backends:
+  # Image Generation Backends
+  image:
+    - name: stable-diffusion-local
+      type: image
+      protocol: http
+      enabled: true
+      endpoints:
+        - "http://localhost:7860"
+      auth:
+        type: none
+      health_check:
+        path: /health
+        interval_secs: 30
+      generation:
+        default_model: "sd-xl"
+        supported_sizes: ["512x512", "768x768", "1024x1024"]
+      load_balancer:
+        strategy: round_robin
+        weight: 1
+
+    # Example: ComfyUI backend
+    # - name: comfyui
+    #   type: image
+    #   protocol: http
+    #   enabled: false
+    #   endpoints:
+    #     - "http://localhost:8188"
+    #   auth:
+    #     type: none
+    #   health_check:
+    #     path: /system_stats
+    #     interval_secs: 30
+
+    # Example: DALL-E API
+    # - name: dalle-api
+    #   type: image
+    #   protocol: openai
+    #   enabled: false
+    #   endpoints:
+    #     - "https://api.openai.com/v1"
+    #   auth:
+    #     type: bearer
+    #     token_env: OPENAI_API_KEY
+    #   generation:
+    #     models: ["dall-e-3", "dall-e-2"]
+
+  # Text Generation Backends
+  text:
+    - name: ollama-local
+      type: text
+      protocol: openai
+      enabled: true
+      endpoints:
+        - "http://localhost:11434/v1"
+      auth:
+        type: none
+      health_check:
+        path: /api/tags
+        interval_secs: 30
+      models:
+        - llama3
+        - mistral
+        - codellama
+      capabilities:
+        - chat
+        - completion
+      load_balancer:
+        strategy: round_robin
+        weight: 1
+
+    # Example: vLLM backend
+    # - name: vllm-server
+    #   type: text
+    #   protocol: openai
+    #   enabled: false
+    #   endpoints:
+    #     - "http://localhost:8000/v1"
+    #   auth:
+    #     type: none
+    #   health_check:
+    #     path: /health
+    #     interval_secs: 30
+    #   models:
+    #     - meta-llama/Llama-2-70b-chat-hf
+    #   capabilities:
+    #     - chat
+    #     - completion
+
+    # Example: OpenAI API
+    # - name: openai-gpt
+    #   type: text
+    #   protocol: openai
+    #   enabled: false
+    #   endpoints:
+    #     - "https://api.openai.com/v1"
+    #   auth:
+    #     type: bearer
+    #     token_env: OPENAI_API_KEY
+    #   models:
+    #     - gpt-4
+    #     - gpt-4-turbo
+    #     - gpt-3.5-turbo
+    #   capabilities:
+    #     - chat
+    #     - completion
+    #   rate_limit:
+    #     requests_per_minute: 60
+    #     tokens_per_minute: 100000
+
+    # Example: Anthropic Claude API
+    # - name: anthropic-claude
+    #   type: text
+    #   protocol: anthropic
+    #   enabled: false
+    #   endpoints:
+    #     - "https://api.anthropic.com/v1"
+    #   auth:
+    #     type: header
+    #     header_name: x-api-key
+    #     token_env: ANTHROPIC_API_KEY
+    #   models:
+    #     - claude-3-opus-20240229
+    #     - claude-3-sonnet-20240229
+    #     - claude-3-haiku-20240307
+    #   capabilities:
+    #     - chat
+
+    # Example: TGI (Text Generation Inference) backend
+    # - name: tgi-server
+    #   type: text
+    #   protocol: tgi
+    #   enabled: false
+    #   endpoints:
+    #     - "http://localhost:3000"
+    #   auth:
+    #     type: none
+    #   health_check:
+    #     path: /health
+    #     interval_secs: 30
+    #   models:
+    #     - mistralai/Mistral-7B-Instruct-v0.2
+    #   capabilities:
+    #     - generate
+    #     - generate_stream
+
+  # gRPC backends (for custom inference servers)
+  grpc:
+    # Example: Triton Inference Server
+    # - name: triton-server
+    #   type: multi
+    #   protocol: grpc
+    #   enabled: false
+    #   endpoints:
+    #     - "localhost:8001"
+    #   auth:
+    #     type: none
+    #   health_check:
+    #     interval_secs: 30
+    #   models:
+    #     - sd-xl
+    #     - llama-7b
+
+# Model routing configuration
+routing:
+  # Default routing strategy
+  default_strategy: round_robin
+  
+  # Model-to-backend mappings (optional)
+  # Maps specific model names to specific backends
+  model_mappings:
+    # gpt-4: openai-gpt
+    # llama3: ollama-local
+    # sd-xl: stable-diffusion-local
+  
+  # Fallback chain (if primary backend fails)
+  fallbacks:
+    # openai-gpt: [anthropic-claude]
+    # stable-diffusion-local: [comfyui]
+

@@ -1,7 +1,7 @@
-//! Generative Image Serving Framework
+//! Gen Serving Gateway
 //!
-//! A Rust-based framework for serving multiple generative image model backends
-//! through a unified gateway with load balancing, health checking, and more.
+//! A Rust-based gateway for serving multiple AI model backends (image and text generation)
+//! through a unified API with load balancing, health checking, and more.
 
 pub mod api;
 pub mod backend;
@@ -18,6 +18,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use backend::registry::BackendRegistry;
+use backend::TextBackendRegistry;
 use gateway::{health_check::HealthCheckManager, load_balancer::LoadBalancer};
 use queue::request_queue::RequestQueue;
 
@@ -25,6 +26,7 @@ use queue::request_queue::RequestQueue;
 pub struct AppState {
     pub settings: Arc<RwLock<config::Settings>>,
     pub backend_registry: Arc<BackendRegistry>,
+    pub text_registry: Arc<TextBackendRegistry>,
     pub load_balancer: Arc<LoadBalancer>,
     pub health_manager: Arc<HealthCheckManager>,
     pub request_queue: Arc<RequestQueue>,

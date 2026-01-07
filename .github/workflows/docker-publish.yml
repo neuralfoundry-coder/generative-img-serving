@@ -20,7 +20,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/generative-img-serving
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/gen-serving-gateway
 
 jobs:
   build-and-push:

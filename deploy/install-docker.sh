@@ -2,7 +2,7 @@
 set -e
 
 # Docker Installation Script for Ubuntu 24.xx
-# Run: curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/install-docker.sh | bash
+# Run: curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/deploy/install-docker.sh | bash
 
 echo "============================================"
 echo "  Docker Installation for Ubuntu 24.xx"

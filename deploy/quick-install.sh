@@ -6,14 +6,14 @@ set -e
 # Supported OS: Ubuntu, Debian, CentOS, RHEL, Fedora, Amazon Linux, macOS
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s compose
-#   curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s docker
+#   curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/deploy/quick-install.sh | bash -s compose
+#   curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/deploy/quick-install.sh | bash -s docker
 #
 # With options:
 #   curl -fsSL .../quick-install.sh | HOST_PORT=9090 bash -s compose
 
-REPO_URL="https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy"
-INSTALL_DIR="${INSTALL_DIR:-$HOME/img-serving}"
+REPO_URL="https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/deploy"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/gen-gateway}"
 METHOD="${1:-compose}"
 
 # Colors

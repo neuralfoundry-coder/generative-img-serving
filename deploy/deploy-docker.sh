@@ -7,9 +7,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Configuration
-IMAGE_NAME="neuralfoundry2coder/generative-img-serving"
+IMAGE_NAME="neuralfoundry2coder/gen-serving-gateway"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-CONTAINER_NAME="${CONTAINER_NAME:-img-serving}"
+CONTAINER_NAME="${CONTAINER_NAME:-gen-gateway}"
 HOST_PORT="${HOST_PORT:-8080}"
 CONTAINER_PORT="8080"
 DATA_DIR="${DATA_DIR:-$SCRIPT_DIR/data}"
@@ -199,7 +199,7 @@ usage() {
     echo ""
     echo "Environment Variables:"
     echo "  IMAGE_TAG       Image tag (default: latest)"
-    echo "  CONTAINER_NAME  Container name (default: img-serving)"
+    echo "  CONTAINER_NAME  Container name (default: gen-gateway)"
     echo "  HOST_PORT       Host port (default: 8080)"
     echo "  DATA_DIR        Data directory (default: ./data)"
     echo "  RUST_LOG        Log level (default: info)"

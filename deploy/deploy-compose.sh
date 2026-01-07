@@ -8,7 +8,7 @@ cd "$SCRIPT_DIR"
 
 # Configuration
 export IMAGE_TAG="${IMAGE_TAG:-latest}"
-export CONTAINER_NAME="${CONTAINER_NAME:-img-serving}"
+export CONTAINER_NAME="${CONTAINER_NAME:-gen-gateway}"
 export HOST_PORT="${HOST_PORT:-8080}"
 export RUST_LOG="${RUST_LOG:-info}"
 
@@ -182,7 +182,7 @@ usage() {
     echo ""
     echo "Environment Variables:"
     echo "  IMAGE_TAG       Image tag (default: latest)"
-    echo "  CONTAINER_NAME  Container name (default: img-serving)"
+    echo "  CONTAINER_NAME  Container name (default: gen-gateway)"
     echo "  HOST_PORT       Host port (default: 8080)"
     echo "  RUST_LOG        Log level (default: info)"
     echo ""

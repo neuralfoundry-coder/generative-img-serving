@@ -35,7 +35,7 @@ FROM debian:bookworm-slim
 # OCI Labels
 LABEL org.opencontainers.image.title="Generative Image Serving Framework"
 LABEL org.opencontainers.image.description="Rust-based framework for integrating multiple generative image model backends"
-LABEL org.opencontainers.image.source="https://github.com/your-org/generative-img-serving"
+LABEL org.opencontainers.image.source="https://github.com/your-org/generative-gen-gateway"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.vendor="Generative Image Serving"
 
@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y \
     && useradd -r -s /bin/false appuser
 
 # Copy the binary
-COPY --from=builder /app/target/release/img-serving /app/img-serving
+COPY --from=builder /app/target/release/gen-gateway /app/gen-gateway
 
 # Copy config
 COPY config ./config
@@ -69,4 +69,4 @@ ENV RUST_LOG=info
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-CMD ["/app/img-serving"]
+CMD ["/app/gen-gateway"]

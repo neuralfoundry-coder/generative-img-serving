@@ -178,7 +178,7 @@ validate_env() {
     # Support both naming conventions
     DOCKER_USERNAME="${DOCKER_USERNAME:-$DOCKER_HUB_USERNAME}"
     DOCKER_ACCESS_TOKEN="${DOCKER_ACCESS_TOKEN:-$DOCKER_HUB_TOKEN}"
-    IMAGE_NAME="${IMAGE_NAME:-generative-img-serving}"
+    IMAGE_NAME="${IMAGE_NAME:-gen-serving-gateway}"
     
     [[ -z "$DOCKER_USERNAME" ]] && missing+=("DOCKER_USERNAME or DOCKER_HUB_USERNAME")
     [[ -z "$DOCKER_ACCESS_TOKEN" ]] && missing+=("DOCKER_ACCESS_TOKEN or DOCKER_HUB_TOKEN")
@@ -421,8 +421,8 @@ github_release() {
         log_info "GitHub Actions will now:"
         echo "  1. Build Docker image"
         echo "  2. Push to Docker Hub as:"
-        echo "     - \$DOCKER_USERNAME/generative-img-serving:$version"
-        echo "     - \$DOCKER_USERNAME/generative-img-serving:latest"
+        echo "     - \$DOCKER_USERNAME/gen-serving-gateway:$version"
+        echo "     - \$DOCKER_USERNAME/gen-serving-gateway:latest"
         echo ""
         log_info "Monitor progress at:"
         local repo_url=$(git remote get-url origin 2>/dev/null | sed 's/.*github.com[:/]\(.*\)\.git/\1/' || echo "your-repo")

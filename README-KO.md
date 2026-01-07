@@ -57,10 +57,10 @@ Rust 기반의 생성형 이미지 모델 통합 서빙 프레임워크입니다
 
 ```bash
 # Docker Compose 방식 (권장)
-curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s compose
+curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/deploy/quick-install.sh | bash -s compose
 
 # Docker 직접 실행 방식
-curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s docker
+curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/gen-serving-gateway/main/deploy/quick-install.sh | bash -s docker
 ```
 
 **지원 OS:**
@@ -77,7 +77,7 @@ curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-
 curl -fsSL .../quick-install.sh | HOST_PORT=9090 bash -s compose
 
 # 설치 경로 변경
-curl -fsSL .../quick-install.sh | INSTALL_DIR=/opt/img-serving bash -s compose
+curl -fsSL .../quick-install.sh | INSTALL_DIR=/opt/gen-gateway bash -s compose
 
 # 특정 버전 설치
 curl -fsSL .../quick-install.sh | IMAGE_TAG=0.2.0 bash -s compose
@@ -94,14 +94,14 @@ curl -fsSL .../quick-install.sh | IMAGE_TAG=0.2.0 bash -s compose
 
 ```bash
 # 저장소 클론
-git clone https://github.com/neuralfoundry-coder/generative-img-serving.git
-cd generative-img-serving
+git clone https://github.com/neuralfoundry-coder/gen-serving-gateway.git
+cd gen-serving-gateway
 
 # 빌드
 cargo build --release
 
 # 실행
-./target/release/img-serving
+./target/release/gen-gateway
 ```
 
 ### 설정
@@ -245,23 +245,23 @@ curl http://localhost:8080/health
 
 ```bash
 # 최신 버전
-docker pull neuralfoundry2coder/generative-img-serving:latest
+docker pull neuralfoundry2coder/gen-serving-gateway:latest
 
 # 특정 버전
-docker pull neuralfoundry2coder/generative-img-serving:0.2.0
+docker pull neuralfoundry2coder/gen-serving-gateway:0.2.0
 ```
 
 ### 수동 Docker 실행
 
 ```bash
 docker run -d \
-  --name img-serving \
+  --name gen-gateway \
   -p 8080:8080 \
   -v $(pwd)/config:/app/config \
   -v $(pwd)/generated_images:/app/generated_images \
   -e RUST_LOG=info \
   --restart unless-stopped \
-  neuralfoundry2coder/generative-img-serving:latest
+  neuralfoundry2coder/gen-serving-gateway:latest
 ```
 
 ### Docker Compose
@@ -269,8 +269,8 @@ docker run -d \
 ```yaml
 # docker-compose.yml
 services:
-  img-serving:
-    image: neuralfoundry2coder/generative-img-serving:latest
+  gen-gateway:
+    image: neuralfoundry2coder/gen-serving-gateway:latest
     ports:
       - "8080:8080"
     volumes:

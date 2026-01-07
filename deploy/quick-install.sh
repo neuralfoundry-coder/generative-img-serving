@@ -3,14 +3,14 @@ set -e
 
 # Generative Image Serving - One-Line Quick Install Script
 # 
-# Method 1 (Docker):
+# Supported OS: Ubuntu, Debian, CentOS, RHEL, Fedora, Amazon Linux, macOS
+#
+# Usage:
+#   curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s compose
 #   curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s docker
 #
-# Method 2 (Docker Compose):
-#   curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s compose
-#
-# With custom port:
-#   curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | HOST_PORT=9090 bash -s compose
+# With options:
+#   curl -fsSL .../quick-install.sh | HOST_PORT=9090 bash -s compose
 
 REPO_URL="https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/img-serving}"
@@ -21,77 +21,440 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
 
-echo ""
-echo -e "${BLUE}============================================${NC}"
-echo -e "${BLUE}  Generative Image Serving - Quick Install${NC}"
-echo -e "${BLUE}============================================${NC}"
-echo ""
+# ============================================
+# OS Detection
+# ============================================
 
-# Create install directory
-log_info "Creating install directory: $INSTALL_DIR"
-mkdir -p "$INSTALL_DIR"
-cd "$INSTALL_DIR"
-
-# Download install-docker.sh
-log_info "Downloading Docker installer..."
-curl -fsSL "$REPO_URL/install-docker.sh" -o install-docker.sh
-chmod +x install-docker.sh
-
-# Install Docker if needed
-if ! command -v docker &> /dev/null; then
-    log_info "Installing Docker..."
-    ./install-docker.sh
-fi
-
-case "$METHOD" in
-    docker|1)
-        log_info "Setting up Method 1: Docker direct..."
-        curl -fsSL "$REPO_URL/deploy-docker.sh" -o deploy-docker.sh
-        chmod +x deploy-docker.sh
-        
-        log_info "Deploying..."
-        ./deploy-docker.sh deploy
-        ;;
+detect_os() {
+    OS=""
+    OS_VERSION=""
+    ARCH=$(uname -m)
     
-    compose|2)
-        log_info "Setting up Method 2: Docker Compose..."
-        curl -fsSL "$REPO_URL/deploy-compose.sh" -o deploy-compose.sh
-        curl -fsSL "$REPO_URL/docker-compose.yml" -o docker-compose.yml
-        chmod +x deploy-compose.sh
-        
-        log_info "Deploying..."
-        ./deploy-compose.sh deploy
-        ;;
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        OS="macos"
+        OS_VERSION=$(sw_vers -productVersion)
+    elif [[ -f /etc/os-release ]]; then
+        . /etc/os-release
+        OS="${ID}"
+        OS_VERSION="${VERSION_ID}"
+    elif [[ -f /etc/redhat-release ]]; then
+        OS="centos"
+    elif [[ -f /etc/debian_version ]]; then
+        OS="debian"
+    else
+        OS="unknown"
+    fi
     
-    *)
-        log_error "Unknown method: $METHOD"
-        echo "Usage: $0 [docker|compose]"
+    # Normalize OS names
+    case "$OS" in
+        ubuntu|debian|linuxmint|pop)
+            OS_FAMILY="debian"
+            ;;
+        centos|rhel|rocky|almalinux|ol)
+            OS_FAMILY="rhel"
+            ;;
+        fedora)
+            OS_FAMILY="fedora"
+            ;;
+        amzn)
+            OS_FAMILY="amazon"
+            ;;
+        macos|darwin)
+            OS_FAMILY="macos"
+            ;;
+        *)
+            OS_FAMILY="unknown"
+            ;;
+    esac
+    
+    log_info "Detected OS: $OS $OS_VERSION ($OS_FAMILY) - $ARCH"
+}
+
+# ============================================
+# Privilege Management
+# ============================================
+
+acquire_privileges() {
+    if [[ $EUID -eq 0 ]]; then
+        SUDO=""
+        log_info "Running as root"
+        return 0
+    fi
+    
+    log_step "Acquiring administrator privileges..."
+    
+    # Request sudo upfront and keep it alive
+    if sudo -v; then
+        SUDO="sudo"
+        log_info "Administrator privileges acquired"
+        
+        # Keep sudo alive in background
+        (while true; do sudo -n true; sleep 50; kill -0 "$$" || exit; done 2>/dev/null) &
+        SUDO_KEEPALIVE_PID=$!
+        
+        # Cleanup on exit
+        trap 'kill $SUDO_KEEPALIVE_PID 2>/dev/null' EXIT
+    else
+        log_error "Failed to acquire administrator privileges"
         exit 1
-        ;;
-esac
+    fi
+}
 
-echo ""
-echo -e "${GREEN}============================================${NC}"
-echo -e "${GREEN}  Installation Complete!${NC}"
-echo -e "${GREEN}============================================${NC}"
-echo ""
-echo "Install directory: $INSTALL_DIR"
-echo "API Endpoint: http://localhost:${HOST_PORT:-8080}"
-echo ""
-echo "Next steps:"
-echo "  cd $INSTALL_DIR"
-if [[ "$METHOD" == "docker" ]] || [[ "$METHOD" == "1" ]]; then
-    echo "  ./deploy-docker.sh logs    # View logs"
-    echo "  ./deploy-docker.sh status  # Check status"
-else
-    echo "  ./deploy-compose.sh logs   # View logs"
-    echo "  ./deploy-compose.sh status # Check status"
-fi
-echo ""
+# ============================================
+# Docker Installation by OS
+# ============================================
 
+check_docker_installed() {
+    if command -v docker &> /dev/null; then
+        DOCKER_VERSION=$(docker --version 2>/dev/null | cut -d' ' -f3 | tr -d ',')
+        log_info "Docker is installed: v$DOCKER_VERSION"
+        return 0
+    fi
+    return 1
+}
+
+check_docker_running() {
+    if docker info &> /dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+check_docker_compose() {
+    if docker compose version &> /dev/null; then
+        COMPOSE_VERSION=$(docker compose version --short 2>/dev/null)
+        log_info "Docker Compose is installed: v$COMPOSE_VERSION"
+        return 0
+    fi
+    return 1
+}
+
+install_docker_debian() {
+    log_step "Installing Docker on Debian/Ubuntu..."
+    
+    # Remove old versions
+    $SUDO apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+    
+    # Install prerequisites
+    $SUDO apt-get update
+    $SUDO apt-get install -y \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release
+    
+    # Add Docker GPG key
+    $SUDO install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/$OS/gpg | $SUDO gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    $SUDO chmod a+r /etc/apt/keyrings/docker.gpg
+    
+    # Add Docker repository
+    echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$OS \
+        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+        $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+    # Install Docker
+    $SUDO apt-get update
+    $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    
+    log_info "Docker installed successfully"
+}
+
+install_docker_rhel() {
+    log_step "Installing Docker on RHEL/CentOS..."
+    
+    # Remove old versions
+    $SUDO yum remove -y docker docker-client docker-client-latest docker-common \
+        docker-latest docker-latest-logrotate docker-logrotate docker-engine 2>/dev/null || true
+    
+    # Install prerequisites
+    $SUDO yum install -y yum-utils
+    
+    # Add Docker repository
+    $SUDO yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    
+    # Install Docker
+    $SUDO yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    
+    log_info "Docker installed successfully"
+}
+
+install_docker_fedora() {
+    log_step "Installing Docker on Fedora..."
+    
+    # Remove old versions
+    $SUDO dnf remove -y docker docker-client docker-client-latest docker-common \
+        docker-latest docker-latest-logrotate docker-logrotate docker-selinux \
+        docker-engine-selinux docker-engine 2>/dev/null || true
+    
+    # Install prerequisites
+    $SUDO dnf install -y dnf-plugins-core
+    
+    # Add Docker repository
+    $SUDO dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+    
+    # Install Docker
+    $SUDO dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    
+    log_info "Docker installed successfully"
+}
+
+install_docker_amazon() {
+    log_step "Installing Docker on Amazon Linux..."
+    
+    # Install Docker
+    $SUDO yum install -y docker
+    
+    # Install Docker Compose
+    $SUDO curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+        -o /usr/local/bin/docker-compose
+    $SUDO chmod +x /usr/local/bin/docker-compose
+    $SUDO ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+    
+    log_info "Docker installed successfully"
+}
+
+install_docker_macos() {
+    log_step "Installing Docker on macOS..."
+    
+    # Check if Homebrew is installed
+    if ! command -v brew &> /dev/null; then
+        log_info "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    
+    # Install Docker Desktop via Homebrew
+    if ! brew list --cask docker &> /dev/null; then
+        brew install --cask docker
+        log_info "Docker Desktop installed. Please start Docker Desktop manually."
+        log_warn "After starting Docker Desktop, run this script again."
+        exit 0
+    fi
+    
+    log_info "Docker is installed"
+}
+
+install_docker() {
+    case "$OS_FAMILY" in
+        debian)
+            install_docker_debian
+            ;;
+        rhel)
+            install_docker_rhel
+            ;;
+        fedora)
+            install_docker_fedora
+            ;;
+        amazon)
+            install_docker_amazon
+            ;;
+        macos)
+            install_docker_macos
+            ;;
+        *)
+            log_error "Unsupported OS: $OS ($OS_FAMILY)"
+            log_info "Please install Docker manually: https://docs.docker.com/engine/install/"
+            exit 1
+            ;;
+    esac
+}
+
+# ============================================
+# Docker Service Management
+# ============================================
+
+start_docker_service() {
+    if [[ "$OS_FAMILY" == "macos" ]]; then
+        # macOS: Check if Docker Desktop is running
+        if ! check_docker_running; then
+            log_warn "Docker Desktop is not running. Please start it manually."
+            log_info "Opening Docker Desktop..."
+            open -a Docker 2>/dev/null || true
+            
+            log_info "Waiting for Docker to start (max 60 seconds)..."
+            local count=0
+            while ! check_docker_running && [[ $count -lt 60 ]]; do
+                sleep 2
+                ((count+=2))
+                echo -n "."
+            done
+            echo ""
+            
+            if ! check_docker_running; then
+                log_error "Docker failed to start. Please start Docker Desktop and run this script again."
+                exit 1
+            fi
+        fi
+    else
+        # Linux: Start and enable Docker service
+        log_step "Starting Docker service..."
+        $SUDO systemctl start docker 2>/dev/null || $SUDO service docker start 2>/dev/null || true
+        $SUDO systemctl enable docker 2>/dev/null || true
+        
+        # Wait for Docker to be ready
+        local count=0
+        while ! check_docker_running && [[ $count -lt 30 ]]; do
+            sleep 1
+            ((count++))
+        done
+        
+        if ! check_docker_running; then
+            log_error "Docker service failed to start"
+            exit 1
+        fi
+        
+        log_info "Docker service started"
+    fi
+}
+
+setup_docker_permissions() {
+    if [[ "$OS_FAMILY" == "macos" ]]; then
+        return 0
+    fi
+    
+    if [[ $EUID -eq 0 ]]; then
+        return 0
+    fi
+    
+    # Add current user to docker group
+    if ! groups $USER | grep -q docker; then
+        log_step "Adding $USER to docker group..."
+        $SUDO usermod -aG docker $USER
+        
+        # Apply group change for current session
+        log_info "Applying docker group permissions..."
+        
+        # Use newgrp in a subshell to apply changes
+        if [[ -n "$SUDO" ]]; then
+            # Create a script to run with new group
+            $SUDO chmod 666 /var/run/docker.sock 2>/dev/null || true
+        fi
+        
+        log_info "Docker group permissions configured"
+        log_warn "For permanent effect, please log out and log back in"
+    fi
+}
+
+# ============================================
+# Main Installation
+# ============================================
+
+show_banner() {
+    echo ""
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║   Generative Image Serving - Quick Install             ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+}
+
+download_scripts() {
+    log_step "Downloading deployment scripts..."
+    
+    case "$METHOD" in
+        docker|1)
+            curl -fsSL "$REPO_URL/deploy-docker.sh" -o deploy-docker.sh
+            chmod +x deploy-docker.sh
+            ;;
+        compose|2)
+            curl -fsSL "$REPO_URL/deploy-compose.sh" -o deploy-compose.sh
+            curl -fsSL "$REPO_URL/docker-compose.yml" -o docker-compose.yml
+            chmod +x deploy-compose.sh
+            ;;
+    esac
+    
+    log_info "Scripts downloaded"
+}
+
+deploy_service() {
+    log_step "Deploying service..."
+    
+    case "$METHOD" in
+        docker|1)
+            ./deploy-docker.sh deploy
+            ;;
+        compose|2)
+            ./deploy-compose.sh deploy
+            ;;
+    esac
+}
+
+main() {
+    show_banner
+    
+    # Detect OS
+    detect_os
+    
+    # Acquire privileges early
+    if [[ "$OS_FAMILY" != "macos" ]]; then
+        acquire_privileges
+    fi
+    
+    # Check and install Docker
+    if ! check_docker_installed; then
+        log_warn "Docker is not installed"
+        install_docker
+    fi
+    
+    # Start Docker service
+    start_docker_service
+    
+    # Setup permissions
+    setup_docker_permissions
+    
+    # Verify Docker is working
+    if ! check_docker_running; then
+        log_error "Docker is not running properly"
+        exit 1
+    fi
+    
+    # Check Docker Compose (for compose method)
+    if [[ "$METHOD" == "compose" ]] || [[ "$METHOD" == "2" ]]; then
+        if ! check_docker_compose; then
+            log_warn "Docker Compose plugin not found"
+            if [[ "$OS_FAMILY" != "macos" ]]; then
+                log_info "Installing Docker Compose plugin..."
+                $SUDO apt-get install -y docker-compose-plugin 2>/dev/null || \
+                $SUDO yum install -y docker-compose-plugin 2>/dev/null || \
+                $SUDO dnf install -y docker-compose-plugin 2>/dev/null || true
+            fi
+        fi
+    fi
+    
+    # Create install directory
+    log_step "Creating install directory: $INSTALL_DIR"
+    mkdir -p "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+    
+    # Download and deploy
+    download_scripts
+    deploy_service
+    
+    echo ""
+    echo -e "${GREEN}╔════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║   Installation Complete!                               ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo "Install directory: $INSTALL_DIR"
+    echo "API Endpoint: http://localhost:${HOST_PORT:-8080}"
+    echo ""
+    echo "Commands:"
+    if [[ "$METHOD" == "docker" ]] || [[ "$METHOD" == "1" ]]; then
+        echo "  cd $INSTALL_DIR && ./deploy-docker.sh logs"
+        echo "  cd $INSTALL_DIR && ./deploy-docker.sh status"
+    else
+        echo "  cd $INSTALL_DIR && ./deploy-compose.sh logs"
+        echo "  cd $INSTALL_DIR && ./deploy-compose.sh status"
+    fi
+    echo ""
+}
+
+main "$@"

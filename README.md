@@ -301,44 +301,61 @@ docker build -t generative-img-serving .
 docker run -d -p 8080:8080 generative-img-serving
 ```
 
-### Docker Hub에 푸시하기
+### 배포 스크립트 (`scripts/deploy.sh`)
 
-1. `.env.example`을 `.env`로 복사하고 Docker Hub 인증 정보 입력:
+통합 배포 스크립트를 통해 Docker Hub에 이미지를 배포할 수 있습니다.
+
+#### 1. 직접 푸시 모드 (Direct)
+
+로컬에서 직접 Docker 이미지를 빌드하고 Docker Hub에 푸시합니다.
 
 ```bash
+# .env 파일 설정 (최초 1회)
 cp .env.example .env
-# .env 파일 편집하여 DOCKER_USERNAME, DOCKER_ACCESS_TOKEN 설정
-```
+# DOCKER_HUB_USERNAME, DOCKER_HUB_TOKEN 설정
 
-2. 푸시 스크립트 실행:
-
-```bash
 # 빌드 및 푸시
-./scripts/docker-push.sh
+./scripts/deploy.sh direct
 
 # 특정 버전으로 푸시
-./scripts/docker-push.sh -v 1.0.0
+./scripts/deploy.sh direct -v 1.0.0
 
 # 빌드만 (푸시 없이)
-./scripts/docker-push.sh -b
+./scripts/deploy.sh direct -b
 ```
 
-### GitHub Actions 자동 배포
+#### 2. 릴리스 모드 (Release via GitHub Actions)
 
-이 프로젝트는 GitHub Actions를 통한 자동 Docker Hub 배포를 지원합니다.
+Git 태그를 생성하고 GitHub Actions를 통해 자동 배포합니다.
 
-**설정 방법:**
+```bash
+# Cargo.toml 버전으로 태그 생성
+./scripts/deploy.sh release
 
-1. GitHub 저장소 Settings → Secrets and variables → Actions로 이동
+# 특정 버전으로 릴리스
+./scripts/deploy.sh release -v 1.0.0
+
+# 드라이런 (실제 실행 없이 확인)
+./scripts/deploy.sh release -d
+
+# 기존 태그 덮어쓰기
+./scripts/deploy.sh release -f
+```
+
+### GitHub Actions 설정
+
+GitHub Actions를 통한 자동 배포를 위해 저장소에 Secrets 설정이 필요합니다:
+
+1. GitHub 저장소 Settings → Secrets and variables → Actions
 2. 다음 시크릿 추가:
    - `DOCKER_USERNAME`: Docker Hub 사용자명
    - `DOCKER_ACCESS_TOKEN`: Docker Hub 액세스 토큰
 
-**트리거:**
-- `main` 브랜치 푸시: 자동 빌드 및 푸시
-- 태그 생성 (v*): 버전 태그로 푸시
-- Pull Request: 빌드 테스트 (푸시 없음)
-- 수동 실행: Actions 탭에서 workflow_dispatch
+**자동 트리거:**
+- `main` 브랜치 푸시 → 자동 빌드 및 푸시
+- 태그 생성 (`v*`) → 버전 태그로 푸시
+- Pull Request → 빌드 테스트 (푸시 없음)
+- 수동 실행 → Actions 탭에서 workflow_dispatch
 
 ## 라이선스
 

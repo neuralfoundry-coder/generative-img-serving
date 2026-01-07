@@ -45,6 +45,112 @@ get_version() {
     grep '^version' "$PROJECT_ROOT/Cargo.toml" | head -1 | sed 's/.*= *"\(.*\)"/\1/'
 }
 
+# Get latest git tag version
+get_latest_tag() {
+    git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0"
+}
+
+# Parse version into components
+parse_version() {
+    local version="$1"
+    echo "$version" | tr '.' ' '
+}
+
+# Bump version based on type (major, minor, patch)
+bump_version() {
+    local current="$1"
+    local bump_type="$2"
+    
+    local major minor patch
+    read major minor patch <<< $(parse_version "$current")
+    
+    case "$bump_type" in
+        major)
+            major=$((major + 1))
+            minor=0
+            patch=0
+            ;;
+        minor)
+            minor=$((minor + 1))
+            patch=0
+            ;;
+        patch)
+            patch=$((patch + 1))
+            ;;
+    esac
+    
+    echo "${major}.${minor}.${patch}"
+}
+
+# Update version in Cargo.toml
+update_cargo_version() {
+    local new_version="$1"
+    sed -i '' "s/^version = \".*\"/version = \"$new_version\"/" "$PROJECT_ROOT/Cargo.toml"
+}
+
+# Interactive version selection
+select_version_bump() {
+    local current_version="$1"
+    
+    local major minor patch
+    read major minor patch <<< $(parse_version "$current_version")
+    
+    local new_major="$((major + 1)).0.0"
+    local new_minor="${major}.$((minor + 1)).0"
+    local new_patch="${major}.${minor}.$((patch + 1))"
+    
+    # Display menu to stderr so it doesn't interfere with return value
+    echo "" >&2
+    echo -e "${CYAN}============================================${NC}" >&2
+    echo -e "${CYAN}  Version Selection${NC}" >&2
+    echo -e "${CYAN}============================================${NC}" >&2
+    echo "" >&2
+    echo -e "${GREEN}[INFO]${NC} Current version: ${CYAN}v${current_version}${NC}" >&2
+    echo "" >&2
+    echo "Select version bump type:" >&2
+    echo "" >&2
+    echo -e "  [1] Major  : v${current_version} → ${GREEN}v${new_major}${NC}  (Breaking changes)" >&2
+    echo -e "  [2] Minor  : v${current_version} → ${GREEN}v${new_minor}${NC}  (New features)" >&2
+    echo -e "  [3] Patch  : v${current_version} → ${GREEN}v${new_patch}${NC}  (Bug fixes)" >&2
+    echo -e "  [4] Custom : Enter custom version" >&2
+    echo -e "  [0] Cancel" >&2
+    echo "" >&2
+    
+    local choice
+    read -p "Enter choice [1-4, 0 to cancel]: " choice
+    
+    case "$choice" in
+        1)
+            echo "$new_major"
+            ;;
+        2)
+            echo "$new_minor"
+            ;;
+        3)
+            echo "$new_patch"
+            ;;
+        4)
+            local custom_version
+            read -p "Enter custom version (e.g., 1.2.3): " custom_version
+            # Validate format
+            if [[ "$custom_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "$custom_version"
+            else
+                echo -e "${RED}[ERROR]${NC} Invalid version format. Use X.Y.Z format." >&2
+                exit 1
+            fi
+            ;;
+        0)
+            echo -e "${GREEN}[INFO]${NC} Cancelled." >&2
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}[ERROR]${NC} Invalid choice." >&2
+            exit 1
+            ;;
+    esac
+}
+
 # ============================================
 # Direct Docker Push Functions
 # ============================================
@@ -190,14 +296,9 @@ check_and_commit_changes() {
     
     log_warn "Uncommitted changes detected. Auto-committing..."
     
-    # Generate commit message
+    # Generate commit message with timestamp
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-    local changed_files=$(git diff --name-only HEAD 2>/dev/null | head -5 | tr '\n' ', ' | sed 's/,$//')
-    local commit_msg="chore: release v${version} preparation
-
-- Auto-generated commit for release v${version}
-- Timestamp: ${timestamp}
-- Changed files: ${changed_files}..."
+    local commit_msg="release: v${version} @ ${timestamp}"
     
     if [[ "$dry_run" == true ]]; then
         echo "  [DRY-RUN] git add -A"
@@ -230,11 +331,28 @@ github_release() {
     local message="$2"
     local force="$3"
     local dry_run="$4"
+    local interactive="$5"
     
     cd "$PROJECT_ROOT"
     
-    if [[ -z "$version" ]]; then
-        version=$(get_version)
+    # Get current/latest version
+    local current_version=$(get_latest_tag)
+    local cargo_version=$(get_version)
+    
+    # Interactive version selection
+    if [[ "$interactive" == true ]] || [[ -z "$version" ]]; then
+        version=$(select_version_bump "$current_version")
+        
+        # Update Cargo.toml if version changed
+        if [[ "$version" != "$cargo_version" ]]; then
+            log_step "Updating Cargo.toml version to $version..."
+            if [[ "$dry_run" != true ]]; then
+                update_cargo_version "$version"
+                log_info "Cargo.toml updated"
+            else
+                echo "  [DRY-RUN] Update Cargo.toml version to $version"
+            fi
+        fi
     fi
     
     local tag="v$version"
@@ -248,7 +366,8 @@ github_release() {
     log_header "  GitHub Actions Release"
     log_header "============================================"
     echo ""
-    log_info "Tag: $tag"
+    log_info "Previous version: v$current_version"
+    log_info "New version: $tag"
     log_info "Message: $message"
     echo ""
     
@@ -332,7 +451,7 @@ usage() {
     echo "  -p, --push-only         Push existing image without building"
     echo ""
     echo "Release Mode Options:"
-    echo "  -v, --version VERSION   Override version (default: from Cargo.toml)"
+    echo "  -v, --version VERSION   Set specific version (skips interactive selection)"
     echo "  -m, --message MESSAGE   Tag message (default: 'Release vX.X.X')"
     echo "  -f, --force             Force create tag even if it exists"
     echo "  -d, --dry-run           Show what would be done without executing"
@@ -344,9 +463,16 @@ usage() {
     echo "  $0 direct                    # Direct build and push"
     echo "  $0 direct -v 1.0.0           # Direct push with specific version"
     echo "  $0 direct -b                 # Build only (no push)"
-    echo "  $0 release                   # Create tag and trigger GitHub Actions"
-    echo "  $0 release -v 1.0.0          # Release specific version"
+    echo "  $0 release                   # Interactive version selection + release"
+    echo "  $0 release -v 1.0.0          # Release specific version (no prompt)"
     echo "  $0 release -d                # Dry run release"
+    echo ""
+    echo "Version Selection (release mode):"
+    echo "  When run without -v, prompts to select:"
+    echo "    [1] Major  : x.0.0 (Breaking changes)"
+    echo "    [2] Minor  : 0.x.0 (New features)"
+    echo "    [3] Patch  : 0.0.x (Bug fixes)"
+    echo "    [4] Custom : Enter custom version"
 }
 
 main() {
@@ -382,10 +508,11 @@ main() {
             local message=""
             local force=false
             local dry_run=false
+            local interactive=true  # Default to interactive mode
             
             while [[ $# -gt 0 ]]; do
                 case $1 in
-                    -v|--version) version="$2"; shift 2 ;;
+                    -v|--version) version="$2"; interactive=false; shift 2 ;;
                     -m|--message) message="$2"; shift 2 ;;
                     -f|--force) force=true; shift ;;
                     -d|--dry-run) dry_run=true; shift ;;
@@ -394,7 +521,7 @@ main() {
                 esac
             done
             
-            github_release "$version" "$message" "$force" "$dry_run"
+            github_release "$version" "$message" "$force" "$dry_run" "$interactive"
             ;;
         
         -h|--help)

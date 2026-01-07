@@ -71,6 +71,10 @@ dashmap = "5.5"
 # Parking lot for synchronization
 parking_lot = "0.12"
 
+# OpenAPI / Swagger
+utoipa = { version = "4", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "6", features = ["axum"] }
+
 [build-dependencies]
 tonic-build = "0.10"
 

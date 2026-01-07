@@ -1,7 +1,13 @@
 //! HTTP route definitions
 
 use crate::api::handlers;
-use crate::api::text_handlers;
+use crate::api::models::*;
+use crate::api::text_handlers::{self, *};
+use crate::backend::{
+    ChatMessage, ChatCompletionResponse, ChatChoice,
+    TextCompletionResponse, TextChoice, Usage,
+    ModelsResponse, ModelInfo,
+};
 use crate::middleware::{auth::AuthLayer, rate_limit::RateLimitLayer};
 use axum::{
     routing::{delete, get, post},
@@ -9,6 +15,65 @@ use axum::{
 };
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
+/// OpenAPI documentation
+#[derive(OpenApi)]
+#[openapi(
+    info(
+        title = "Gen Serving Gateway API",
+        version = "0.3.2",
+        description = "Unified AI model serving gateway for image and text generation. OpenAI API compatible.",
+        license(name = "MIT"),
+    ),
+    servers(
+        (url = "http://localhost:15115", description = "Local development server")
+    ),
+    paths(
+        handlers::generate_image,
+        handlers::list_backends,
+        handlers::add_backend,
+        handlers::remove_backend,
+        handlers::health_check,
+        text_handlers::chat_completion,
+        text_handlers::text_completion,
+        text_handlers::list_models,
+        text_handlers::list_text_backends,
+    ),
+    components(schemas(
+        GenerateImageRequest,
+        GenerateImageResponse,
+        ImageData,
+        BackendInfo,
+        BackendListResponse,
+        AddBackendRequest,
+        HealthResponse,
+        BackendHealthSummary,
+        SuccessResponse,
+        ApiChatCompletionRequest,
+        ApiTextCompletionRequest,
+        TextBackendInfo,
+        TextBackendListResponse,
+        ChatMessage,
+        ChatCompletionResponse,
+        ChatChoice,
+        TextCompletionResponse,
+        TextChoice,
+        Usage,
+        ModelsResponse,
+        ModelInfo,
+    )),
+    tags(
+        (name = "Images", description = "Image generation endpoints"),
+        (name = "Chat", description = "Chat completion endpoints"),
+        (name = "Text", description = "Text completion endpoints"),
+        (name = "Models", description = "Model management endpoints"),
+        (name = "Backends", description = "Backend management endpoints"),
+        (name = "Health", description = "Health and monitoring endpoints"),
+    )
+)]
+pub struct ApiDoc;
 
 /// Create the main application router
 pub async fn create_router(state: Arc<crate::AppState>) -> Router {
@@ -58,6 +123,8 @@ pub async fn create_router(state: Arc<crate::AppState>) -> Router {
         .route("/health", get(handlers::health_check))
         // Metrics endpoint (no auth required)
         .route("/metrics", get(handlers::metrics))
+        // Swagger UI
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         // Static file serving for generated images
         .nest_service("/images", tower_http::services::ServeDir::new("generated_images"))
         // Static file serving for generated content

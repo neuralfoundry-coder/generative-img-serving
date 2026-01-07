@@ -1,9 +1,10 @@
 //! API request and response models (OpenAI compatible)
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// Image generation request (OpenAI compatible)
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct GenerateImageRequest {
     /// The prompt to generate images from
     pub prompt: String,
@@ -72,7 +73,7 @@ impl GenerateImageRequest {
 }
 
 /// Image data in the response
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct ImageData {
     /// Base64 encoded image (when response_format is b64_json)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -88,7 +89,7 @@ pub struct ImageData {
 }
 
 /// Image generation response (OpenAI compatible)
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct GenerateImageResponse {
     /// Unix timestamp of creation
     pub created: i64,
@@ -98,7 +99,7 @@ pub struct GenerateImageResponse {
 }
 
 /// Backend information for management API
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct BackendInfo {
     pub name: String,
     pub protocol: String,
@@ -109,13 +110,13 @@ pub struct BackendInfo {
 }
 
 /// Backend list response
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct BackendListResponse {
     pub backends: Vec<BackendInfo>,
 }
 
 /// Add backend request
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct AddBackendRequest {
     pub name: String,
     #[serde(default = "default_protocol")]
@@ -159,14 +160,14 @@ fn default_weight() -> u32 {
 }
 
 /// Health check response
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct HealthResponse {
     pub status: String,
     pub version: String,
     pub backends: BackendHealthSummary,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct BackendHealthSummary {
     pub total: usize,
     pub healthy: usize,
@@ -174,7 +175,7 @@ pub struct BackendHealthSummary {
 }
 
 /// Generic success response
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct SuccessResponse {
     pub success: bool,
     pub message: String,

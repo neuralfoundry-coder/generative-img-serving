@@ -8,12 +8,13 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::{debug, warn, error};
+use utoipa::ToSchema;
 
 use crate::config::{BackendConfig, ProtocolType};
 use crate::error::{AppError, Result};
 
 /// Chat message for completion requests
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
@@ -22,7 +23,7 @@ pub struct ChatMessage {
 }
 
 /// Chat completion request (OpenAI compatible)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ChatCompletionRequest {
     pub model: String,
     pub messages: Vec<ChatMessage>,
@@ -45,7 +46,7 @@ pub struct ChatCompletionRequest {
 }
 
 /// Text completion request (OpenAI compatible)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TextCompletionRequest {
     pub model: String,
     pub prompt: String,
@@ -62,7 +63,7 @@ pub struct TextCompletionRequest {
 }
 
 /// Chat completion response
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ChatCompletionResponse {
     pub id: String,
     pub object: String,
@@ -74,7 +75,7 @@ pub struct ChatCompletionResponse {
 }
 
 /// Chat choice
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ChatChoice {
     pub index: u32,
     pub message: ChatMessage,
@@ -83,7 +84,7 @@ pub struct ChatChoice {
 }
 
 /// Text completion response
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TextCompletionResponse {
     pub id: String,
     pub object: String,
@@ -95,7 +96,7 @@ pub struct TextCompletionResponse {
 }
 
 /// Text choice
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TextChoice {
     pub index: u32,
     pub text: String,
@@ -104,7 +105,7 @@ pub struct TextChoice {
 }
 
 /// Token usage information
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Usage {
     pub prompt_tokens: u32,
     pub completion_tokens: u32,
@@ -112,7 +113,7 @@ pub struct Usage {
 }
 
 /// Model information
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ModelInfo {
     pub id: String,
     pub object: String,
@@ -123,7 +124,7 @@ pub struct ModelInfo {
 }
 
 /// Models list response
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ModelsResponse {
     pub object: String,
     pub data: Vec<ModelInfo>,

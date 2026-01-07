@@ -15,9 +15,10 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
+use utoipa::ToSchema;
 
 /// API chat completion request
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ApiChatCompletionRequest {
     pub model: String,
     pub messages: Vec<ChatMessage>,
@@ -43,7 +44,7 @@ pub struct ApiChatCompletionRequest {
 }
 
 /// API text completion request
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ApiTextCompletionRequest {
     pub model: String,
     pub prompt: String,
@@ -63,6 +64,19 @@ pub struct ApiTextCompletionRequest {
 }
 
 /// Chat completion handler (OpenAI /v1/chat/completions compatible)
+///
+/// Creates a chat completion for the provided messages. OpenAI API compatible.
+#[utoipa::path(
+    post,
+    path = "/v1/chat/completions",
+    request_body = ApiChatCompletionRequest,
+    responses(
+        (status = 200, description = "Chat completion successful", body = crate::backend::ChatCompletionResponse),
+        (status = 400, description = "Invalid request"),
+        (status = 500, description = "Internal server error"),
+    ),
+    tag = "Chat"
+)]
 pub async fn chat_completion(
     State(state): State<Arc<AppState>>,
     Json(request): Json<ApiChatCompletionRequest>,
@@ -103,6 +117,19 @@ pub async fn chat_completion(
 }
 
 /// Text completion handler (OpenAI /v1/completions compatible)
+///
+/// Creates a text completion for the provided prompt. OpenAI API compatible.
+#[utoipa::path(
+    post,
+    path = "/v1/completions",
+    request_body = ApiTextCompletionRequest,
+    responses(
+        (status = 200, description = "Text completion successful", body = crate::backend::TextCompletionResponse),
+        (status = 400, description = "Invalid request"),
+        (status = 500, description = "Internal server error"),
+    ),
+    tag = "Text"
+)]
 pub async fn text_completion(
     State(state): State<Arc<AppState>>,
     Json(request): Json<ApiTextCompletionRequest>,
@@ -140,6 +167,16 @@ pub async fn text_completion(
 }
 
 /// List models handler (OpenAI /v1/models compatible)
+///
+/// Returns a list of all available models from all registered backends. OpenAI API compatible.
+#[utoipa::path(
+    get,
+    path = "/v1/models",
+    responses(
+        (status = 200, description = "List of available models", body = crate::backend::ModelsResponse),
+    ),
+    tag = "Models"
+)]
 pub async fn list_models(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<ModelsResponse>, AppError> {
@@ -178,7 +215,7 @@ pub async fn list_models(
 }
 
 /// Text backend info for listing
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TextBackendInfo {
     pub name: String,
     pub protocol: String,
@@ -189,12 +226,22 @@ pub struct TextBackendInfo {
     pub enabled: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TextBackendListResponse {
     pub backends: Vec<TextBackendInfo>,
 }
 
 /// List text backends
+///
+/// Returns a list of all registered text generation backends with their status and capabilities.
+#[utoipa::path(
+    get,
+    path = "/v1/backends/text",
+    responses(
+        (status = 200, description = "List of text backends", body = TextBackendListResponse),
+    ),
+    tag = "Backends"
+)]
 pub async fn list_text_backends(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<TextBackendListResponse>, AppError> {

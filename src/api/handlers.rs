@@ -19,6 +19,19 @@ use std::sync::Arc;
 use tracing::info;
 
 /// Generate images from a prompt
+///
+/// Creates images based on a text prompt. OpenAI DALL-E API compatible.
+#[utoipa::path(
+    post,
+    path = "/v1/images/generations",
+    request_body = GenerateImageRequest,
+    responses(
+        (status = 200, description = "Images generated successfully", body = GenerateImageResponse),
+        (status = 400, description = "Invalid request"),
+        (status = 500, description = "Internal server error"),
+    ),
+    tag = "Images"
+)]
 pub async fn generate_image(
     State(state): State<Arc<AppState>>,
     Json(request): Json<GenerateImageRequest>,
@@ -72,6 +85,16 @@ pub async fn generate_image(
 }
 
 /// List all registered backends
+///
+/// Returns a list of all registered image generation backends with their status.
+#[utoipa::path(
+    get,
+    path = "/v1/backends",
+    responses(
+        (status = 200, description = "List of all backends", body = BackendListResponse),
+    ),
+    tag = "Backends"
+)]
 pub async fn list_backends(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<BackendListResponse>, AppError> {
@@ -95,6 +118,19 @@ pub async fn list_backends(
 }
 
 /// Add a new backend dynamically
+///
+/// Dynamically add a new image or text generation backend.
+#[utoipa::path(
+    post,
+    path = "/v1/backends",
+    request_body = AddBackendRequest,
+    responses(
+        (status = 200, description = "Backend added successfully", body = SuccessResponse),
+        (status = 400, description = "Invalid request"),
+        (status = 500, description = "Internal server error"),
+    ),
+    tag = "Backends"
+)]
 pub async fn add_backend(
     State(state): State<Arc<AppState>>,
     Json(request): Json<AddBackendRequest>,
@@ -152,6 +188,20 @@ pub async fn add_backend(
 }
 
 /// Remove a backend
+///
+/// Remove a registered backend by name.
+#[utoipa::path(
+    delete,
+    path = "/v1/backends/{name}",
+    params(
+        ("name" = String, Path, description = "Backend name to remove")
+    ),
+    responses(
+        (status = 200, description = "Backend removed successfully", body = SuccessResponse),
+        (status = 404, description = "Backend not found"),
+    ),
+    tag = "Backends"
+)]
 pub async fn remove_backend(
     State(state): State<Arc<AppState>>,
     Path(name): Path<String>,
@@ -167,6 +217,16 @@ pub async fn remove_backend(
 }
 
 /// Health check endpoint
+///
+/// Returns the health status of the gateway and its backends.
+#[utoipa::path(
+    get,
+    path = "/health",
+    responses(
+        (status = 200, description = "Service is healthy", body = HealthResponse),
+    ),
+    tag = "Health"
+)]
 pub async fn health_check(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<HealthResponse>, AppError> {

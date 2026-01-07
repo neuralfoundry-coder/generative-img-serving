@@ -51,7 +51,7 @@ docker pull neuralfoundry2coder/gen-serving-gateway:latest
 # 기본 설정으로 실행
 docker run -d \
   --name gen-gateway \
-  -p 8080:8080 \
+  -p 15115:15115 \
   -v $(pwd)/config:/app/config:ro \
   neuralfoundry2coder/gen-serving-gateway:latest
 ```
@@ -86,7 +86,7 @@ backends:
       type: image
       protocol: http
       endpoints:
-        - "http://localhost:7860"
+        - "http://localhost:8001"
       health_check:
         path: /internal/ping
         interval_secs: 30
@@ -125,7 +125,7 @@ version: "1.0"
 
 server:
   host: "0.0.0.0"
-  port: 8080
+  port: 15115
 
 auth:
   enabled: true
@@ -151,7 +151,7 @@ rate_limit:
 
 ```bash
 # 이미지 생성
-curl -X POST http://localhost:8080/v1/images/generations \
+curl -X POST http://localhost:15115/v1/images/generations \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key" \
   -d '{
@@ -166,7 +166,7 @@ curl -X POST http://localhost:8080/v1/images/generations \
 
 ```bash
 # LLM과 채팅
-curl -X POST http://localhost:8080/v1/chat/completions \
+curl -X POST http://localhost:15115/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key" \
   -d '{
@@ -180,7 +180,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 ### 텍스트 완성
 
 ```bash
-curl -X POST http://localhost:8080/v1/completions \
+curl -X POST http://localhost:15115/v1/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key" \
   -d '{
@@ -193,29 +193,29 @@ curl -X POST http://localhost:8080/v1/completions \
 ### 모델 목록
 
 ```bash
-curl http://localhost:8080/v1/models \
+curl http://localhost:15115/v1/models \
   -H "Authorization: Bearer your-api-key"
 ```
 
 ### 헬스 체크
 
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:15115/health
 ```
 
 ### 백엔드 관리
 
 ```bash
 # 모든 백엔드 목록
-curl http://localhost:8080/v1/backends \
+curl http://localhost:15115/v1/backends \
   -H "Authorization: Bearer your-api-key"
 
 # 텍스트 백엔드 목록
-curl http://localhost:8080/v1/backends/text \
+curl http://localhost:15115/v1/backends/text \
   -H "Authorization: Bearer your-api-key"
 
 # 새 백엔드 추가
-curl -X POST http://localhost:8080/v1/backends \
+curl -X POST http://localhost:15115/v1/backends \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key" \
   -d '{
@@ -226,7 +226,7 @@ curl -X POST http://localhost:8080/v1/backends \
   }'
 
 # 백엔드 제거
-curl -X DELETE http://localhost:8080/v1/backends/backend-name \
+curl -X DELETE http://localhost:15115/v1/backends/backend-name \
   -H "Authorization: Bearer your-api-key"
 ```
 

@@ -136,7 +136,7 @@ run_load_tests() {
     fi
     
     # Check if gateway is running
-    if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    if ! curl -s http://localhost:15115/health > /dev/null 2>&1; then
         print_warning "Gateway not running. Start with: docker-compose up -d"
         print_warning "Skipping load tests."
         TEST_RESULTS["load"]="skipped"

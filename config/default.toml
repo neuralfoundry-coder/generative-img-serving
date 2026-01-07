@@ -2,7 +2,7 @@
 
 [server]
 host = "0.0.0.0"
-port = 8080
+port = 15115
 
 [auth]
 enabled = true
@@ -17,7 +17,7 @@ burst_size = 200
 # Local file storage configuration
 base_path = "./generated_images"
 # URL prefix for serving stored images
-url_prefix = "http://localhost:8080/images"
+url_prefix = "http://localhost:15115/images"
 
 [logging]
 level = "info"
@@ -27,7 +27,7 @@ format = "json"  # "json" or "pretty"
 [[backends]]
 name = "stable-diffusion"
 protocol = "http"
-endpoints = ["http://localhost:7860"]
+endpoints = ["http://localhost:8001"]
 health_check_path = "/health"
 health_check_interval_secs = 30
 timeout_ms = 60000

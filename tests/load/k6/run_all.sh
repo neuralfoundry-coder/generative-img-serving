@@ -11,7 +11,7 @@ REPORTS_DIR="$PROJECT_DIR/reports/latest"
 mkdir -p "$REPORTS_DIR"
 
 # Default configuration
-BASE_URL="${BASE_URL:-http://localhost:8080}"
+BASE_URL="${BASE_URL:-http://localhost:15115}"
 API_KEY="${API_KEY:-test-api-key-1}"
 
 echo "=================================================="
@@ -75,7 +75,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --all              Run all scenarios"
             echo "  --scenario NAME    Run specific scenario (baseline, spike, stress, soak, breakpoint)"
-            echo "  --url URL          Target URL (default: http://localhost:8080)"
+            echo "  --url URL          Target URL (default: http://localhost:15115)"
             echo "  --help             Show this help"
             exit 0
             ;;

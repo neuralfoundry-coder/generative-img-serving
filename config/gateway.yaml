@@ -5,7 +5,7 @@ version: "1.0"
 # Server settings
 server:
   host: "0.0.0.0"
-  port: 8080
+  port: 15115
   # TLS configuration (optional)
   # tls:
   #   enabled: false
@@ -115,7 +115,7 @@ storage:
   base_path: "./generated"
   
   # URL prefix for serving stored files
-  url_prefix: "http://localhost:8080/files"
+  url_prefix: "http://localhost:15115/files"
   
   # Cleanup settings
   cleanup:

@@ -6,7 +6,8 @@ RUN pip install --no-cache-dir fastapi uvicorn httpx pillow
 
 COPY server.py .
 
-EXPOSE 8000
+# Port is configured via MOCK_PORT environment variable (default: 8001)
+EXPOSE 8001 8002 8003 8004
 
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "server.py"]
 

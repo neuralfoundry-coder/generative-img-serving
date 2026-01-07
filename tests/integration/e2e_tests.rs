@@ -60,7 +60,7 @@ async fn test_app_state_creation() {
 async fn test_backend_registration_via_state() {
     let state = create_test_app_state().await;
     
-    let config = create_test_backend_config("test-backend", 7860);
+    let config = create_test_backend_config("test-backend", 8001);
     state.backend_registry.add_backend(config).await.unwrap();
     
     assert!(!state.backend_registry.is_empty());
@@ -73,7 +73,7 @@ async fn test_load_balancer_with_registered_backends() {
     
     // Register multiple backends
     for i in 1..=3 {
-        let config = create_test_backend_config(&format!("backend-{}", i), 7860 + i);
+        let config = create_test_backend_config(&format!("backend-{}", i), 8001 + i);
         state.backend_registry.add_backend(config).await.unwrap();
     }
     
@@ -88,7 +88,7 @@ async fn test_health_summary_integration() {
     
     // Add backends
     for i in 1..=2 {
-        let config = create_test_backend_config(&format!("backend-{}", i), 7860 + i);
+        let config = create_test_backend_config(&format!("backend-{}", i), 8001 + i);
         state.backend_registry.add_backend(config).await.unwrap();
     }
     
@@ -159,7 +159,7 @@ async fn test_backend_dynamic_management() {
     let state = create_test_app_state().await;
     
     // Add a backend
-    let config = create_test_backend_config("dynamic-backend", 7860);
+    let config = create_test_backend_config("dynamic-backend", 8001);
     state.backend_registry.add_backend(config).await.unwrap();
     assert_eq!(state.backend_registry.len(), 1);
     

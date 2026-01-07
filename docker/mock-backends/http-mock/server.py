@@ -21,6 +21,7 @@ app = FastAPI(title="Mock Image Generation Backend")
 
 # Configuration from environment
 MOCK_NAME = os.getenv("MOCK_NAME", "mock-backend")
+MOCK_PORT = int(os.getenv("MOCK_PORT", "8001"))
 RESPONSE_DELAY_MIN = int(os.getenv("RESPONSE_DELAY_MIN", "50"))
 RESPONSE_DELAY_MAX = int(os.getenv("RESPONSE_DELAY_MAX", "100"))
 ERROR_RATE = int(os.getenv("ERROR_RATE", "0"))  # Percentage of requests that fail
@@ -208,5 +209,5 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=MOCK_PORT)
 

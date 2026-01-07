@@ -10,7 +10,7 @@ fn create_test_config(name: &str, protocol: &str, weight: u32) -> BackendConfig 
     BackendConfig {
         name: name.to_string(),
         protocol: protocol.to_string(),
-        endpoints: vec![format!("http://{}:8000", name)],
+        endpoints: vec![format!("http://{}:8001", name)],
         health_check_path: "/health".to_string(),
         health_check_interval_secs: 30,
         timeout_ms: 60000,

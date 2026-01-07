@@ -10,8 +10,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE_NAME="neuralfoundry2coder/gen-serving-gateway"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 CONTAINER_NAME="${CONTAINER_NAME:-gen-gateway}"
-HOST_PORT="${HOST_PORT:-8080}"
-CONTAINER_PORT="8080"
+HOST_PORT="${HOST_PORT:-15115}"
+CONTAINER_PORT="15115"
 DATA_DIR="${DATA_DIR:-$SCRIPT_DIR/data}"
 CONFIG_DIR="${DATA_DIR}/config"
 IMAGES_DIR="${DATA_DIR}/generated_images"
@@ -70,7 +70,7 @@ create_default_config() {
     cat > "$config_file" << 'EOF'
 [server]
 host = "0.0.0.0"
-port = 8080
+port = 15115
 
 [auth]
 enabled = false
@@ -95,7 +95,7 @@ strategy = "round_robin"
 # [[backends]]
 # name = "stable-diffusion"
 # protocol = "http"
-# endpoints = ["http://localhost:7860"]
+# endpoints = ["http://localhost:8001"]
 # health_check_path = "/health"
 # health_check_interval_secs = 30
 # timeout_ms = 60000
@@ -130,7 +130,7 @@ run_container() {
         -v "${IMAGES_DIR}:/app/generated_images" \
         -e RUST_LOG="${RUST_LOG:-info}" \
         --restart unless-stopped \
-        --health-cmd="curl -f http://localhost:8080/health || exit 1" \
+        --health-cmd="curl -f http://localhost:15115/health || exit 1" \
         --health-interval=30s \
         --health-timeout=10s \
         --health-retries=3 \
@@ -207,7 +207,7 @@ usage() {
     echo "Environment Variables:"
     echo "  IMAGE_TAG       Image tag (default: latest)"
     echo "  CONTAINER_NAME  Container name (default: gen-gateway)"
-    echo "  HOST_PORT       Host port (default: 8080)"
+    echo "  HOST_PORT       Host port (default: 15115)"
     echo "  DATA_DIR        Data directory (default: ./data)"
     echo "  RUST_LOG        Log level (default: info)"
     echo ""

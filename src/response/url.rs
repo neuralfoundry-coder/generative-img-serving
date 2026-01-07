@@ -61,34 +61,34 @@ mod tests {
 
     #[test]
     fn test_generate_url() {
-        let handler = UrlHandler::new("http://localhost:8080/images".to_string());
+        let handler = UrlHandler::new("http://localhost:15115/images".to_string());
         
         assert_eq!(
             handler.generate_url("/path/to/image.png"),
-            "http://localhost:8080/images/image.png"
+            "http://localhost:15115/images/image.png"
         );
         
         assert_eq!(
             handler.generate_url("image.png"),
-            "http://localhost:8080/images/image.png"
+            "http://localhost:15115/images/image.png"
         );
     }
 
     #[test]
     fn test_extract_filename() {
-        let handler = UrlHandler::new("http://localhost:8080/images".to_string());
+        let handler = UrlHandler::new("http://localhost:15115/images".to_string());
         
         assert_eq!(
-            handler.extract_filename("http://localhost:8080/images/image.png"),
+            handler.extract_filename("http://localhost:15115/images/image.png"),
             Some("image.png".to_string())
         );
     }
 
     #[test]
     fn test_is_local_url() {
-        let handler = UrlHandler::new("http://localhost:8080/images".to_string());
+        let handler = UrlHandler::new("http://localhost:15115/images".to_string());
         
-        assert!(handler.is_local_url("http://localhost:8080/images/test.png"));
+        assert!(handler.is_local_url("http://localhost:15115/images/test.png"));
         assert!(!handler.is_local_url("http://example.com/test.png"));
     }
 }

@@ -17,7 +17,7 @@ async fn test_registry_add_http_backend() {
     let config = BackendConfig {
         name: "test-backend".to_string(),
         protocol: "http".to_string(),
-        endpoints: vec!["http://localhost:7860".to_string()],
+        endpoints: vec!["http://localhost:8001".to_string()],
         health_check_path: "/health".to_string(),
         health_check_interval_secs: 30,
         timeout_ms: 60000,
@@ -38,7 +38,7 @@ async fn test_registry_remove_backend() {
     let config = BackendConfig {
         name: "test-backend".to_string(),
         protocol: "http".to_string(),
-        endpoints: vec!["http://localhost:7860".to_string()],
+        endpoints: vec!["http://localhost:8001".to_string()],
         health_check_path: "/health".to_string(),
         health_check_interval_secs: 30,
         timeout_ms: 60000,
@@ -68,7 +68,7 @@ async fn test_registry_duplicate_backend() {
     let config = BackendConfig {
         name: "test-backend".to_string(),
         protocol: "http".to_string(),
-        endpoints: vec!["http://localhost:7860".to_string()],
+        endpoints: vec!["http://localhost:8001".to_string()],
         health_check_path: "/health".to_string(),
         health_check_interval_secs: 30,
         timeout_ms: 60000,

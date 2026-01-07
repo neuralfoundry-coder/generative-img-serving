@@ -61,12 +61,12 @@ RUN mkdir -p /app/generated_images && \
 # Switch to non-root user
 USER appuser
 
-EXPOSE 8080
+EXPOSE 15115
 
 ENV RUST_LOG=info
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:15115/health || exit 1
 
 CMD ["/app/gen-gateway"]

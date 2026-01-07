@@ -175,16 +175,16 @@ add_image_backend() {
     local endpoint
     case "$type_name" in
         stable-diffusion)
-            endpoint=$(read_input "WebUI URL" "http://localhost:7860")
+            endpoint=$(read_input "WebUI URL" "http://localhost:8001")
             ;;
         comfyui)
-            endpoint=$(read_input "ComfyUI URL" "http://localhost:8188")
+            endpoint=$(read_input "ComfyUI URL" "http://localhost:8002")
             ;;
         dalle)
             endpoint=$(read_input "OpenAI API URL" "https://api.openai.com/v1")
             ;;
         *)
-            endpoint=$(read_input "Backend URL" "http://localhost:8080")
+            endpoint=$(read_input "Backend URL" "http://localhost:8001")
             ;;
     esac
     
@@ -363,17 +363,17 @@ add_text_backend() {
             protocol="anthropic"
             ;;
         vllm)
-            endpoint=$(read_input "vLLM Server URL" "http://localhost:8000/v1")
+            endpoint=$(read_input "vLLM Server URL" "http://localhost:8001/v1")
             ;;
         tgi)
-            endpoint=$(read_input "TGI Server URL" "http://localhost:3000")
+            endpoint=$(read_input "TGI Server URL" "http://localhost:8002")
             protocol="tgi"
             ;;
         together)
             endpoint=$(read_input "Together AI URL" "https://api.together.xyz/v1")
             ;;
         *)
-            endpoint=$(read_input "Backend URL" "http://localhost:8080/v1")
+            endpoint=$(read_input "Backend URL" "http://localhost:8001/v1")
             ;;
     esac
     

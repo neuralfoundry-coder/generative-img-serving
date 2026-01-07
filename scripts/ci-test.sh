@@ -33,7 +33,7 @@ if [ "$RUN_LOAD_TESTS" = "true" ]; then
     # Check if k6 is available
     if command -v k6 &> /dev/null; then
         # Check if services are running
-        if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+        if curl -s http://localhost:15115/health > /dev/null 2>&1; then
             ./scripts/test-runner.sh load --scenario baseline
         else
             echo "⚠️  Gateway not running, skipping load tests"

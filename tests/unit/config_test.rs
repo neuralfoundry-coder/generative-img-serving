@@ -7,7 +7,7 @@ fn test_default_settings() {
     let settings = Settings::default();
     
     assert_eq!(settings.server.host, "0.0.0.0");
-    assert_eq!(settings.server.port, 8080);
+    assert_eq!(settings.server.port, 15115);
     assert!(settings.auth.enabled);
     assert!(settings.rate_limit.enabled);
     assert_eq!(settings.rate_limit.requests_per_second, 100);
@@ -17,12 +17,12 @@ fn test_default_settings() {
 #[test]
 fn test_settings_validation_valid() {
     let mut settings = Settings::default();
-    settings.server.port = 8080;
+    settings.server.port = 15115;
     settings.backends = vec![
         BackendConfig {
             name: "test-backend".to_string(),
             protocol: "http".to_string(),
-            endpoints: vec!["http://localhost:7860".to_string()],
+            endpoints: vec!["http://localhost:8001".to_string()],
             health_check_path: "/health".to_string(),
             health_check_interval_secs: 30,
             timeout_ms: 60000,
@@ -49,7 +49,7 @@ fn test_settings_validation_empty_backend_name() {
         BackendConfig {
             name: "".to_string(),
             protocol: "http".to_string(),
-            endpoints: vec!["http://localhost:7860".to_string()],
+            endpoints: vec!["http://localhost:8001".to_string()],
             health_check_path: "/health".to_string(),
             health_check_interval_secs: 30,
             timeout_ms: 60000,
@@ -104,7 +104,7 @@ fn test_backend_config_defaults() {
     let config = BackendConfig {
         name: "test".to_string(),
         protocol: "http".to_string(),
-        endpoints: vec!["http://localhost:7860".to_string()],
+        endpoints: vec!["http://localhost:8001".to_string()],
         health_check_path: "/health".to_string(),
         health_check_interval_secs: 30,
         timeout_ms: 60000,

@@ -6,13 +6,13 @@ use generative_img_serving::config::Settings;
 async fn test_settings_load_default() {
     let settings = Settings::default();
     assert_eq!(settings.server.host, "0.0.0.0");
-    assert_eq!(settings.server.port, 8080);
+    assert_eq!(settings.server.port, 15115);
 }
 
 #[tokio::test]
 async fn test_settings_validation() {
     let mut settings = Settings::default();
-    settings.server.port = 8080;
+    settings.server.port = 15115;
     assert!(settings.validate().is_ok());
 }
 

@@ -481,7 +481,7 @@ main() {
     echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo "Install directory: $INSTALL_DIR"
-    echo "API Endpoint: http://localhost:${HOST_PORT:-8080}"
+    echo "API Endpoint: http://localhost:${HOST_PORT:-15115}"
     echo ""
     echo "Configuration:"
     echo "  Backend config: $INSTALL_DIR/config/backends.yaml"

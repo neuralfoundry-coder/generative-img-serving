@@ -9,7 +9,7 @@ cd "$SCRIPT_DIR"
 # Configuration
 export IMAGE_TAG="${IMAGE_TAG:-latest}"
 export CONTAINER_NAME="${CONTAINER_NAME:-gen-gateway}"
-export HOST_PORT="${HOST_PORT:-8080}"
+export HOST_PORT="${HOST_PORT:-15115}"
 export RUST_LOG="${RUST_LOG:-info}"
 
 # Colors
@@ -67,7 +67,7 @@ create_default_config() {
     cat > "$config_file" << 'EOF'
 [server]
 host = "0.0.0.0"
-port = 8080
+port = 15115
 
 [auth]
 enabled = false
@@ -90,7 +90,7 @@ strategy = "round_robin"
 # [[backends]]
 # name = "stable-diffusion"
 # protocol = "http"
-# endpoints = ["http://localhost:7860"]
+# endpoints = ["http://localhost:8001"]
 # weight = 1
 # enabled = true
 EOF
@@ -183,7 +183,7 @@ usage() {
     echo "Environment Variables:"
     echo "  IMAGE_TAG       Image tag (default: latest)"
     echo "  CONTAINER_NAME  Container name (default: gen-gateway)"
-    echo "  HOST_PORT       Host port (default: 8080)"
+    echo "  HOST_PORT       Host port (default: 15115)"
     echo "  RUST_LOG        Log level (default: info)"
     echo ""
     echo "Examples:"

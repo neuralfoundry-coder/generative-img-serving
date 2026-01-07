@@ -7,9 +7,9 @@ services:
       context: ..
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "15115:15115"
     environment:
-      - IMG_SERVING__SERVER__PORT=8080
+      - IMG_SERVING__SERVER__PORT=15115
       - IMG_SERVING__AUTH__ENABLED=true
       - IMG_SERVING__AUTH__API_KEYS=test-api-key-1,test-api-key-2
       - RUST_LOG=info
@@ -24,7 +24,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:15115/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -34,16 +34,17 @@ services:
     build:
       context: ./mock-backends/http-mock
     ports:
-      - "7860:8000"
+      - "8001:8001"
     environment:
       - MOCK_NAME=http-backend-1
+      - MOCK_PORT=8001
       - RESPONSE_DELAY_MIN=50
       - RESPONSE_DELAY_MAX=100
       - ERROR_RATE=0
     networks:
       - test-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -53,16 +54,17 @@ services:
     build:
       context: ./mock-backends/http-mock
     ports:
-      - "7861:8000"
+      - "8002:8002"
     environment:
       - MOCK_NAME=http-backend-2
+      - MOCK_PORT=8002
       - RESPONSE_DELAY_MIN=50
       - RESPONSE_DELAY_MAX=100
       - ERROR_RATE=0
     networks:
       - test-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -72,16 +74,17 @@ services:
     build:
       context: ./mock-backends/http-mock
     ports:
-      - "7862:8000"
+      - "8003:8003"
     environment:
       - MOCK_NAME=slow-backend
+      - MOCK_PORT=8003
       - RESPONSE_DELAY_MIN=2000
       - RESPONSE_DELAY_MAX=5000
       - ERROR_RATE=0
     networks:
       - test-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -91,9 +94,10 @@ services:
     build:
       context: ./mock-backends/http-mock
     ports:
-      - "7863:8000"
+      - "8004:8004"
     environment:
       - MOCK_NAME=failure-backend
+      - MOCK_PORT=8004
       - RESPONSE_DELAY_MIN=100
       - RESPONSE_DELAY_MAX=500
       - ERROR_RATE=30
@@ -101,7 +105,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
       interval: 10s
       timeout: 5s
       retries: 3

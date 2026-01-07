@@ -83,7 +83,7 @@ fn default_storage_path() -> String {
 }
 
 fn default_url_prefix() -> String {
-    "http://localhost:8080/files".to_string()
+    "http://localhost:15115/files".to_string()
 }
 
 /// Logging configuration
@@ -327,7 +327,7 @@ impl Settings {
         
         let config = Config::builder()
             .set_default("server.host", "0.0.0.0")?
-            .set_default("server.port", 8080)?
+            .set_default("server.port", 15115)?
             .set_default("auth.enabled", true)?
             .set_default("rate_limit.enabled", true)?
             .set_default("rate_limit.requests_per_second", 100)?
@@ -360,14 +360,14 @@ impl Settings {
         
         let mut config_builder = Config::builder()
             .set_default("server.host", "0.0.0.0")?
-            .set_default("server.port", 8080)?
+            .set_default("server.port", 15115)?
             .set_default("auth.enabled", true)?
             .set_default("auth.bypass_paths", Vec::<String>::new())?
             .set_default("rate_limit.enabled", true)?
             .set_default("rate_limit.requests_per_second", 100)?
             .set_default("rate_limit.burst_size", 200)?
             .set_default("storage.base_path", "./generated")?
-            .set_default("storage.url_prefix", "http://localhost:8080/files")?
+            .set_default("storage.url_prefix", "http://localhost:15115/files")?
             .set_default("logging.level", "info")?
             .set_default("logging.format", "json")?;
         
@@ -556,7 +556,7 @@ mod tests {
     fn test_default_settings() {
         let settings = Settings::default();
         assert_eq!(settings.server.host, "0.0.0.0");
-        assert_eq!(settings.server.port, 8080);
+        assert_eq!(settings.server.port, 15115);
         assert!(settings.auth.enabled);
         assert!(settings.rate_limit.enabled);
     }

@@ -1,19 +1,19 @@
 # Generative Image Serving Framework
 
-**English** | [한국어](README-KO.md)
+[English](README.md) | **한국어**
 
-A Rust-based unified serving framework for generative image models. Integrate and manage multiple image generation backends through a single gateway.
+Rust 기반의 생성형 이미지 모델 통합 서빙 프레임워크입니다. 여러 이미지 생성 백엔드를 단일 게이트웨이로 통합하여 관리할 수 있습니다.
 
-## Features
+## 주요 기능
 
-- **Multi-Backend Integration**: HTTP/gRPC protocol support, connect various image generation model backends
-- **Gateway Functions**: Load balancing, dynamic routing, API authentication, rate limiting
-- **Async Processing**: Async request queue, dynamic batch processing
-- **Fault Tolerance**: Health checks, automatic failover, circuit breaker pattern
-- **Flexible Response Formats**: Base64 encoding, file storage, URL references
-- **OpenAI API Compatible**: Compatibility with existing clients
+- **다중 백엔드 통합**: HTTP/gRPC 프로토콜 지원, 다양한 이미지 생성 모델 백엔드 연결
+- **게이트웨이 기능**: 부하 분산, 동적 라우팅, API 인증, Rate Limiting
+- **비동기 처리**: 비동기 요청 큐, 동적 배치 처리 지원
+- **장애 대응**: 헬스 체크, 자동 페일오버, 서킷 브레이커 패턴
+- **유연한 응답 형식**: Base64 인코딩, 파일 저장, URL 참조 등 다양한 전송 방식
+- **OpenAI API 호환**: 기존 클라이언트와의 호환성 보장
 
-## Architecture
+## 아키텍처
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -49,67 +49,64 @@ A Rust-based unified serving framework for generative image models. Integrate an
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+## 빠른 시작
 
-### One-Line Installation (Recommended)
+### One-Line 설치 (권장)
 
-Deploy instantly with a single command:
+서버에서 한 줄 명령어로 즉시 배포할 수 있습니다:
 
 ```bash
-# Docker Compose (Recommended)
+# Docker Compose 방식 (권장)
 curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s compose
 
-# Docker Direct
+# Docker 직접 실행 방식
 curl -fsSL https://raw.githubusercontent.com/neuralfoundry-coder/generative-img-serving/main/deploy/quick-install.sh | bash -s docker
 ```
 
-**Supported Operating Systems:**
+**지원 OS:**
+- Ubuntu / Debian
+- CentOS / RHEL / Rocky / AlmaLinux
+- Fedora
+- Amazon Linux
+- macOS
 
-| OS | Package Manager | Status |
-|----|-----------------|--------|
-| Ubuntu / Debian | apt | ✅ |
-| CentOS / RHEL / Rocky / AlmaLinux | yum | ✅ |
-| Fedora | dnf | ✅ |
-| Amazon Linux | yum | ✅ |
-| macOS | Homebrew | ✅ |
-
-**Installation Options:**
+**옵션:**
 
 ```bash
-# Custom port
+# 포트 변경
 curl -fsSL .../quick-install.sh | HOST_PORT=9090 bash -s compose
 
-# Custom install directory
+# 설치 경로 변경
 curl -fsSL .../quick-install.sh | INSTALL_DIR=/opt/img-serving bash -s compose
 
-# Specific version
+# 특정 버전 설치
 curl -fsSL .../quick-install.sh | IMAGE_TAG=0.2.0 bash -s compose
 ```
 
-### Build from Source
+### 소스에서 빌드
 
-#### Requirements
+#### 요구사항
 
-- Rust 1.83+
-- (Optional) protoc for gRPC features
+- Rust 1.83 이상
+- (선택) protoc (gRPC 기능 사용 시)
 
-#### Installation
+#### 설치 및 실행
 
 ```bash
-# Clone repository
+# 저장소 클론
 git clone https://github.com/neuralfoundry-coder/generative-img-serving.git
 cd generative-img-serving
 
-# Build
+# 빌드
 cargo build --release
 
-# Run
+# 실행
 ./target/release/img-serving
 ```
 
-### Configuration
+### 설정
 
-Edit `config/default.toml`:
+`config/default.toml` 파일을 수정하여 설정을 변경할 수 있습니다:
 
 ```toml
 [server]
@@ -136,16 +133,16 @@ weight = 1
 enabled = true
 ```
 
-Environment variables (prefix: `IMG_SERVING__`):
+환경 변수로도 설정할 수 있습니다 (접두사: `IMG_SERVING__`):
 
 ```bash
 export IMG_SERVING__SERVER__PORT=9090
 export IMG_SERVING__AUTH__ENABLED=false
 ```
 
-## API Endpoints
+## API 엔드포인트
 
-### Image Generation (OpenAI Compatible)
+### 이미지 생성 (OpenAI 호환)
 
 ```bash
 curl -X POST http://localhost:8080/v1/images/generations \
@@ -159,7 +156,7 @@ curl -X POST http://localhost:8080/v1/images/generations \
   }'
 ```
 
-**Response:**
+**응답:**
 ```json
 {
   "created": 1234567890,
@@ -171,9 +168,9 @@ curl -X POST http://localhost:8080/v1/images/generations \
 }
 ```
 
-### Extended Parameters
+### 확장 파라미터
 
-Additional parameters beyond OpenAI API:
+OpenAI API 외에 추가 파라미터를 지원합니다:
 
 ```json
 {
@@ -186,14 +183,14 @@ Additional parameters beyond OpenAI API:
 }
 ```
 
-### Backend Management
+### 백엔드 관리
 
 ```bash
-# List backends
+# 백엔드 목록 조회
 curl http://localhost:8080/v1/backends \
   -H "Authorization: Bearer your-api-key"
 
-# Add backend
+# 백엔드 추가
 curl -X POST http://localhost:8080/v1/backends \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
@@ -203,18 +200,18 @@ curl -X POST http://localhost:8080/v1/backends \
     "endpoints": ["http://gpu-server:7860"]
   }'
 
-# Remove backend
+# 백엔드 제거
 curl -X DELETE http://localhost:8080/v1/backends/backend-name \
   -H "Authorization: Bearer your-api-key"
 ```
 
-### Health Check
+### 헬스 체크
 
 ```bash
 curl http://localhost:8080/health
 ```
 
-**Response:**
+**응답:**
 ```json
 {
   "status": "healthy",
@@ -227,34 +224,34 @@ curl http://localhost:8080/health
 }
 ```
 
-## Load Balancing Strategies
+## 로드 밸런싱 전략
 
-- **Round Robin** (default): Distribute requests sequentially
-- **Weighted Round Robin**: Weight-based distribution
-- **Random**: Random selection
-- **Least Connections**: Connection count based (coming soon)
+- **Round Robin** (기본): 요청을 순차적으로 분배
+- **Weighted Round Robin**: 가중치 기반 분배
+- **Random**: 무작위 선택
+- **Least Connections**: 연결 수 기반 (예정)
 
-## Response Formats
+## 응답 형식
 
-| Format | Description |
-|--------|-------------|
-| `url` | Return URL of generated image (default) |
-| `b64_json` | Return Base64 encoded image data |
-| `file` | Return local file path (internal use) |
+| 형식 | 설명 |
+|------|------|
+| `url` | 생성된 이미지의 URL 반환 (기본) |
+| `b64_json` | Base64 인코딩된 이미지 데이터 반환 |
+| `file` | 로컬 파일 경로 반환 (내부용) |
 
-## Docker Deployment
+## Docker 배포
 
-### Docker Hub Image
+### Docker Hub 이미지
 
 ```bash
-# Latest version
+# 최신 버전
 docker pull neuralfoundry2coder/generative-img-serving:latest
 
-# Specific version
+# 특정 버전
 docker pull neuralfoundry2coder/generative-img-serving:0.2.0
 ```
 
-### Manual Docker Run
+### 수동 Docker 실행
 
 ```bash
 docker run -d \
@@ -293,25 +290,25 @@ services:
 docker compose up -d
 ```
 
-## Development
+## 개발
 
 ```bash
-# Development mode
+# 개발 모드 실행
 cargo run
 
-# Run tests
+# 테스트 실행
 cargo test
 
-# Format code
+# 포맷팅
 cargo fmt
 
-# Lint check
+# 린트 검사
 cargo clippy
 ```
 
-## gRPC Support
+## gRPC 지원
 
-Install `protoc` for gRPC backends:
+gRPC 백엔드를 사용하려면 `protoc`이 설치되어 있어야 합니다:
 
 ```bash
 # macOS
@@ -320,109 +317,66 @@ brew install protobuf
 # Ubuntu
 apt-get install protobuf-compiler
 
-# Build with gRPC codegen
+# gRPC 코드 생성 포함 빌드
 cargo build --features grpc-codegen
-```
-
-## Project Structure
-
-```
-src/
-├── main.rs                 # Entry point
-├── lib.rs                  # Library root
-├── config/                 # Configuration
-├── api/                    # HTTP API
-│   ├── routes.rs          # Route definitions
-│   ├── handlers.rs        # Request handlers
-│   └── models.rs          # API models
-├── middleware/            # Middleware
-│   ├── auth.rs            # API Key authentication
-│   └── rate_limit.rs      # Rate limiting
-├── gateway/               # Gateway
-│   ├── load_balancer.rs   # Load balancer
-│   ├── health_check.rs    # Health checks
-│   └── router.rs          # Dynamic router
-├── queue/                 # Request processing
-│   ├── request_queue.rs   # Async queue
-│   └── batcher.rs         # Batch processing
-├── backend/               # Backend integration
-│   ├── traits.rs          # Common traits
-│   ├── http_backend.rs    # HTTP client
-│   ├── grpc_backend.rs    # gRPC client
-│   └── registry.rs        # Backend registry
-├── response/              # Response handling
-│   ├── base64.rs          # Base64 encoding
-│   ├── file.rs            # File storage
-│   └── url.rs             # URL generation
-└── error.rs               # Error handling
-
-deploy/
-├── quick-install.sh       # One-line installer (multi-OS)
-├── deploy-docker.sh       # Docker direct deployment
-├── deploy-compose.sh      # Docker Compose deployment
-└── docker-compose.yml     # Compose configuration
-
-scripts/
-├── deploy.sh              # Release & deployment script
-├── test-runner.sh         # Test runner
-└── ci-test.sh             # CI/CD test script
 ```
 
 ---
 
-## Release & Deployment (For Developers)
+## 릴리스 및 배포 (개발자용)
 
-### Deployment Script (`scripts/deploy.sh`)
+### 배포 스크립트 (`scripts/deploy.sh`)
 
-Unified deployment script for Docker Hub publishing.
+통합 배포 스크립트를 통해 Docker Hub에 이미지를 배포할 수 있습니다.
 
-#### 1. Direct Push Mode
+#### 1. 직접 푸시 모드 (Direct)
 
 ```bash
-# Setup .env file (first time only)
+# .env 파일 설정 (최초 1회)
 cp .env.example .env
 
-# Build and push
+# 빌드 및 푸시
 ./scripts/deploy.sh direct
 
-# Push specific version
+# 특정 버전으로 푸시
 ./scripts/deploy.sh direct -v 1.0.0
 ```
 
-#### 2. Release Mode (via GitHub Actions)
+#### 2. 릴리스 모드 (Release via GitHub Actions)
 
 ```bash
-# Interactive version selection + auto commit/push/tag
+# Interactive 버전 선택 + 자동 커밋/푸시/태그
 ./scripts/deploy.sh release
 
-# Version selection prompt:
+# 버전 선택 화면:
 #   [1] Major  : v0.2.0 → v1.0.0  (Breaking changes)
 #   [2] Minor  : v0.2.0 → v0.3.0  (New features)
 #   [3] Patch  : v0.2.0 → v0.2.1  (Bug fixes)
 #   [4] Custom : Enter custom version
 
-# Release specific version (skip prompt)
+# 특정 버전으로 릴리스 (질의 없음)
 ./scripts/deploy.sh release -v 1.0.0
 
-# Dry run
+# 드라이런
 ./scripts/deploy.sh release -d
 ```
 
-### GitHub Actions Setup
+### GitHub Actions 설정
 
-Configure repository secrets for automated deployment:
+GitHub Actions를 통한 자동 배포를 위해 저장소에 Secrets 설정이 필요합니다:
 
-1. Go to GitHub repository Settings → Secrets and variables → Actions
-2. Add the following secrets:
-   - `DOCKER_USERNAME`: Docker Hub username
-   - `DOCKER_ACCESS_TOKEN`: Docker Hub access token
+1. GitHub 저장소 Settings → Secrets and variables → Actions
+2. 다음 시크릿 추가:
+   - `DOCKER_USERNAME`: Docker Hub 사용자명
+   - `DOCKER_ACCESS_TOKEN`: Docker Hub 액세스 토큰
 
-**Auto Triggers:**
-- `main` branch push → Auto build and push
-- Tag creation (`v*`) → Push with version tag
-- Pull Request → Build test only (no push)
-- Manual → workflow_dispatch in Actions tab
+**자동 트리거:**
+- `main` 브랜치 푸시 → 자동 빌드 및 푸시
+- 태그 생성 (`v*`) → 버전 태그로 푸시
+- Pull Request → 빌드 테스트 (푸시 없음)
+- 수동 실행 → Actions 탭에서 workflow_dispatch
 
-## License
+## 라이선스
 
 MIT License
+
